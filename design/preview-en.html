@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>video-factcheck — panel preview, all states (texts per extension/content.js, en)</title>
+<style>
+  body { background: #0f0f0f; color: #e8e8e8; font: 14px/1.5 Roboto, "Segoe UI", system-ui, sans-serif; margin: 0; padding: 24px; }
+  h1 { font-size: 18px; font-weight: 500; margin: 0 0 4px; }
+  .sub { color: #9aa0a6; font-size: 12px; margin-bottom: 24px; }
+  .row { display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; margin-bottom: 28px; }
+  .cap { color: #9aa0a6; font-size: 11px; margin: 6px 0 0; text-align: center; }
+  .panel { width: 340px; background: #16181d; border: 1px solid #2c2f36; border-radius: 12px; display: flex; flex-direction: column; max-height: 560px; box-shadow: 0 4px 16px rgba(0,0,0,.4); }
+  .head { display: flex; align-items: center; gap: 8px; padding: 9px 12px; border-bottom: 1px solid #2c2f36; }
+  .tt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .head b { font-size: 15px; font-weight: 600; letter-spacing: .01em; line-height: 1.2; }
+  .ver { font-weight: 400; font-size: 10px; color: #7c828a; }
+  .sub { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #9aa0a6; line-height: 1.2; }
+  .sub .dot { width: 5px; height: 5px; border-radius: 50%; background: #9aa0a6; flex: none; }
+  .sub.up { color: #7bd88f; } .sub.up .dot { background: #7bd88f; }
+  .sub.down { color: #ff8a80; } .sub.down .dot { background: #ff8a80; }
+  .spacer { flex: 1; }
+  .run { background: #cc2b24; border: none; color: #fff; padding: 6px 14px; border-radius: 999px; font: 600 12px Roboto, system-ui, sans-serif; cursor: pointer; }
+  .run.dis { background: #5a3a38; }
+  .fold { background: none; border: none; color: #9aa0a6; font-size: 15px; cursor: pointer; border-radius: 8px; padding: 2px 8px; }
+  .fold.close { font-size: 16px; }
+  .profile { background: none; border: none; color: #9aa0a6; width: 28px; height: 28px; padding: 0; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 8px; }
+  .dl { background: none; border: none; color: #9aa0a6; padding: 2px 8px; font-size: 16px; cursor: pointer; border-radius: 8px; }
+  .status { padding: 8px 12px; color: #9aa0a6; font-size: 12px; border-bottom: 1px solid #2c2f36; min-height: 33px; display: flex; align-items: center; gap: 8px; }
+  .status.err { color: #ff8a80; }
+  .spin { width: 11px; height: 11px; border-radius: 50%; border: 2px solid #2c2f36; border-top-color: #9aa0a6; animation: spin .9s linear infinite; flex: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .skip { color: #3ea6ff; text-decoration: none; }
+  .counts { padding: 9px 12px 8px; font-size: 11px; border-bottom: 1px solid #2c2f36; }
+  .stackbar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; }
+  .stackbar i { display: block; height: 100%; min-width: 2px; }
+  .stacknums { display: flex; justify-content: space-between; gap: 8px; margin-top: 6px; }
+  .sn { display: inline-flex; align-items: center; gap: 5px; color: #9aa0a6; white-space: nowrap; font-variant-numeric: tabular-nums; background: none; border: none; padding: 3px 6px; margin: -3px -2px; font: 400 11px Roboto, system-ui, sans-serif; cursor: pointer; border-radius: 7px; }
+  .sn i { width: 6px; height: 6px; border-radius: 2px; flex: none; }
+  .sn b { color: #dfe3e8; font-weight: 500; }
+  .sn.active { background: #22262e; color: #dfe3e8; }
+  .feed { overflow: hidden; flex: 1; padding: 4px 0; }
+  .card { padding: 4px 12px; border-bottom: 1px solid #22252b; }
+  .card:last-child { border-bottom: none; }
+  .statebg { border-radius: 8px; margin: 0 3px; padding: 8px 9px; }
+  .card.hov .statebg { background: #1a1d23; }
+  .card.now .statebg { background: #22262e; position: relative; }
+  .card.now .statebg::before { content: ""; position: absolute; left: -3px; top: 6px; bottom: 6px; width: 3px; border-radius: 2px; background: #7bd88f; }
+  .row1 { display: flex; gap: 8px; align-items: center; }
+  .ts { color: #3ea6ff; font: 12px "Roboto Mono", Consolas, monospace; font-variant-numeric: tabular-nums; text-decoration: none; display: inline-flex; align-items: center; min-height: 32px; }
+  .badge { font-size: 11px; font-weight: 700; padding: 1px 9px; border-radius: 999px; white-space: nowrap; min-width: 64px; text-align: center; }
+  .v-true { background: #1d3a24; color: #7bd88f; } .v-false { background: #3d1a18; color: #ff8a80; }
+  .v-strange { background: #3a331a; color: #ffd666; } .v-none { background: #26292f; color: #9aa0a6; }
+  .conf { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 3px; margin-left: auto; }
+  .conf .segs { display: inline-flex; gap: 2px; }
+  .conf i { width: 18px; height: 4px; border-radius: 2px; background: #2c2f36; }
+  .conf i.on { background: currentColor; }
+  .conf .lvl { font-size: 10px; line-height: 1; color: currentColor; white-space: nowrap; }
+  .claim { margin: 4px 0 2px; color: #dfe3e8; font-size: 13px; }
+  .claim.clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .why { color: #9aa0a6; font-size: 12px; margin: 2px 0; }
+  .srcs { margin-top: 4px; font-size: 11px; }
+  .srcs a { color: #3ea6ff; text-decoration: none; margin-right: 8px; }
+  .more { color: #9aa0a6; }
+  .empty { color: #9aa0a6; padding: 20px 14px; text-align: center; font-size: 12px; line-height: 1.6; }
+  .empty b { color: #dfe3e8; font-weight: 500; }
+  .idlebox { padding: 18px 14px 14px; text-align: center; }
+  .legend { display: flex; justify-content: center; gap: 14px; margin-bottom: 8px; }
+  .lg { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: #9aa0a6; }
+  .lg i { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .idlebal { font-size: 12px; color: #7c828a; min-height: 16px; font-variant-numeric: tabular-nums; }
+  .feedtabs { display: flex; gap: 4px; padding: 6px 12px 5px; background: #16181d; border-bottom: 1px solid #2c2f36; }
+  .ftab { background: none; border: none; color: #9aa0a6; padding: 3px 12px; border-radius: 999px; font: 500 12px Roboto, system-ui, sans-serif; cursor: pointer; }
+  .ftab.active { background: #22262e; color: #dfe3e8; }
+  .tgroup { padding: 5px 0 1px; }
+  .tgroup + .tgroup { margin-top: 4px; border-top: 1px solid #1e2126; }
+  .tline { display: flex; align-items: baseline; gap: 7px; padding: 1px 12px; }
+  .tline.cont { padding-left: 25px; }
+  .tline .ts { min-height: 0; margin: 0; font-size: 11px; }
+  .tline .ttext { color: #9aa0a6; font-size: 12px; line-height: 1.45; min-width: 0; }
+  .tmore { padding: 6px 12px; color: #7c828a; font-size: 11px; cursor: pointer; }
+  .tquote { margin: 4px 0 2px; color: #9aa0a6; font-size: 12px; line-height: 1.5; }
+  .tcat { margin-top: 2px; color: #7c828a; font-size: 11px; }
+</style>
+</head>
+<body>
+<h1>video-factcheck — all panel states</h1>
+<div class="sub">v0.9.1: panel — floating r12 card, shadow 0 4px 16px; header — server line, profile, “↓ .md”, “−”, “×”; feed tabs “Text/Facts”. Soft shapes, hard links (reviews/2026-10-28-screens.md), tokens — design/tokens.json</div>
+
+<div class="row">
+  <div><div class="panel">
+    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.9.1</span></b><span class="sub up"><i class="dot"></i>server is up</span></div><span class="spacer"></span><button class="run">Check video</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="fold">−</button><button class="fold close">×</button></div>
+    <div class="status"><span>Click “Check video” to start</span></div>
+    <div class="feed"><div class="idlebox"><div class="legend"><span class="lg"><i style="background:#7bd88f"></i>true</span><span class="lg"><i style="background:#ff8a80"></i>false</span><span class="lg"><i style="background:#ffd666"></i>unclear</span></div><div class="idlebal">free today: 10 · credits: 32</div></div></div>
+  </div><p class="cap">idle · verdict legend + balance line</p></div>
+
+  <div><div class="panel">
+    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.9.1</span></b><span class="sub up"><i class="dot"></i>server is up</span></div><span class="spacer"></span><button class="run dis">Checking…</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="fold">−</button><button class="fold close">×</button></div>
+    <div class="status"><div class="spin"></div><span>Finding claims: 8/29</span></div>
+    <div class="feedtabs"><button class="ftab active">Text</button><button class="ftab">Facts</button></div>
+    <div class="feed">
+      <div class="tgroup"><div class="tline"><span class="ts">0:12</span><span class="ttext">My colleagues and I have spent years studying mass extinctions…</span></div><div class="tline cont"><span class="ttext">…and today I will talk about the five biggest ones.</span></div></div>
+      <div class="tgroup"><div class="tline"><span class="ts">0:44</span><span class="ttext">The first and the best known is the Permian extinction, it wiped out nearly everything…</span></div></div>
+      <div class="tmore">··· 14 more fragments</div>
+    </div>
+  </div><p class="cap">running · the transcript streams immediately, 30s groups, “··· N more”</p></div>
+
+  <div><div class="panel">
+    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.9.1</span></b><span class="sub up"><i class="dot"></i>server is up</span></div><span class="spacer"></span><button class="run dis">Checking…</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="dl" title="Download .md">↓</button><button class="fold">−</button><button class="fold close">×</button></div>
+    <div class="status"><div class="spin"></div><span>Checking claims: 3/15 · 1:24 · <a class="skip" href="#">skip waiting</a></span></div>
+    <div class="feedtabs"><button class="ftab active">Text</button><button class="ftab">Facts</button></div>
+    <div class="feed">
+      <div class="tgroup">
+        <div class="tline"><span class="ts">0:23</span><span class="ttext">…there have been five mass extinctions on Earth…</span></div>
+        <div class="card"><div class="statebg"><div class="row1"><a class="ts" href="#">0:23</a><span class="badge v-true">true</span><span class="conf" style="color:#7bd88f"><span class="segs"><i class="on"></i><i class="on"></i><i class="on"></i></span><span class="lvl">high</span></span></div>
+          <div class="claim">There have been five mass extinctions on Earth.</div>
+          <div class="why">The paleontological record documents the Big Five events.</div>
+          <div class="srcs"><a href="#">wikipedia.org</a><a href="#">britannica.com</a></div></div></div>
+      </div>
+      <div class="tgroup">
+        <div class="tline"><span class="ts">0:27</span><span class="ttext">…each one wiped out at least three quarters of species…</span></div>
+        <div class="card now"><div class="statebg"><div class="row1"><a class="ts" href="#">0:27</a><span class="badge v-false">false</span><span class="conf" style="color:#ffd666"><span class="segs"><i class="on"></i><i class="on"></i><i></i></span><span class="lvl">medium</span></span></div>
+          <div class="claim">Each of the five mass extinctions wiped out at least three quarters of species.</div>
+          <div class="why">The Big Five threshold is 75% of marine species; not every event reached it.</div>
+          <div class="srcs"><a href="#">nature.com</a><a href="#">smithsonianmag.com</a><span class="more">2 more</span></div></div></div>
+      </div>
+      <div class="tmore">··· 12 more fragments</div>
+    </div>
+  </div><p class="cap">running · verdicts land in the transcript by timestamp, the current card is highlighted</p></div>
+</div>
+
+<div class="row">
+  <div><div class="panel">
+    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.9.1</span></b><span class="sub up"><i class="dot"></i>server is up</span></div><span class="spacer"></span><button class="run" style="display:none">Check again</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="dl" title="Download .md">↓</button><button class="fold">−</button><button class="fold close">×</button></div>
+    <div class="status"><span>Done · true 4 · false 1 · unclear 1</span></div>
+    <div class="counts" title="6 of 15 claims checked">
+      <div class="stackbar"><i style="width:40%;background:#2f9e4f" title="true 4"></i><i style="width:10%;background:#e5484d" title="false 1"></i><i style="width:10%;background:#d9b02f" title="unclear 1"></i><i style="width:40%;background:#9aa0a6" title="no verdict 9"></i></div>
+      <div class="stacknums">
+        <button class="sn"><i style="background:#2f9e4f"></i>true <b>4</b></button>
+        <button class="sn"><i style="background:#e5484d"></i>false <b>1</b></button>
+        <button class="sn"><i style="background:#d9b02f"></i>unclear <b>1</b></button>
+        <button class="sn"><i style="background:#9aa0a6"></i>no verdict <b>9</b></button>
+      </div>
+    </div>
+    <div class="feedtabs"><button class="ftab active">Text</button><button class="ftab">Facts</button></div>
+    <div class="feed">
+      <div class="card"><div class="statebg"><div class="row1"><a class="ts" href="#">41:12</a><span class="badge v-true">true</span><span class="conf" style="color:#7bd88f"><span class="segs"><i class="on"></i><i class="on"></i><i class="on"></i></span><span class="lvl">high</span></span></div>
+        <div class="claim clamp">Sea lilies looked like plants but were animals, and their stems could reach twenty meters long in the deep waters of the Mesozoic</div>
+        <div class="why">Sea lilies (Crinoidea) are echinoderms — animals.</div>
+        <div class="srcs"><a href="#">britannica.com</a><a href="#">nplus1.ru</a></div></div></div>
+      <div class="card"><div class="statebg"><div class="row1"><a class="ts" href="#">41:40</a><span class="badge v-none">unchecked</span></div>
+        <div class="tquote">“This claim is beyond this run’s limit”</div>
+        <div class="tcat">category: historical fact</div></div></div>
+    </div>
+  </div><p class="cap">done · stack bar with filters, long claim clamped, note card</p></div>
+
+  <div><div class="panel">
+    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.9.1</span></b><span class="sub down"><i class="dot"></i>server is not responding</span></div><span class="spacer"></span><button class="run">Check video</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="fold">−</button><button class="fold close">×</button></div>
+    <div class="status err"><span>This video has no subtitles, so it cannot be checked</span></div>
+    <div class="feed"><div class="empty">verdicts will appear here</div></div>
+  </div><p class="cap">error · a human-readable reason, the server line goes red</p></div>
+
+  <div><div class="panel">
+    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.9.1</span></b><span class="sub up"><i class="dot"></i>server is up</span></div><span class="spacer"></span><button class="run" style="display:none">Check again</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="fold">−</button><button class="fold close">×</button></div>
+    <div class="status"><span>No checkable claims found</span></div>
+    <div class="feed"><div class="empty"><b>No checkable claims found</b><br>the video seems to have no facts to check: music, a clip, or pure opinion</div></div>
+  </div><p class="cap">no-claims · the product stays silent on purpose</p></div>
+</div>
+
+<div class="row">
+  <div><div class="mini-demo" style="display:flex;gap:28px">
+    <div class="mini-circle"><span class="mini-ico"><svg viewBox="0 0 24 24" width="22" height="22"><rect x="4.1" y="6.4" width="15.8" height="11.2" rx="3" fill="none" stroke="#2F6FED" stroke-width="2.6"/><path d="M8.6 12 L10.9 14.3 L15.7 8.6" fill="none" stroke="#2F6FED" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="mini-x">×</span></div>
+    <div class="mini-circle busy"><span class="mini-ico" style="color:#ffd66e"><svg viewBox="0 0 24 24" width="22" height="22"><rect x="4.1" y="6.4" width="15.8" height="11.2" rx="3" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M8.6 12 L10.9 14.3 L15.7 8.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="mini-x">×</span></div>
+  </div><p class="cap">mini · 52px dot, brand sign #2F6FED;<br>busy — amber pulse 1800ms, icon #ffd66e; × 24px hides the panel entirely</p></div>
+
+  <div><div style="display:flex;gap:10px;align-items:center;padding:20px 0">
+    <button class="ytbtn"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6.4" width="15.7" height="11.2" rx="3"/><path d="M8.6 12 L10.9 14.3 L15.7 8.6"/></svg>Fact-check</button>
+    <button class="ytbtn"><span class="cnt">7/15</span></button>
+    <button class="ytbtn done"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2f9e4f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.3 12.4 L10.8 14.9 L15.8 9"/></svg>Fact-check</button>
+  </div><p class="cap">button under the video (dark): idle · running (counter) · done (check)</p></div>
+
+  <div><div style="background:#fff;border-radius:12px;padding:12px;display:flex;gap:10px;align-items:center;justify-content:center;min-width:220px">
+    <button class="ytbtn light"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6.4" width="15.7" height="11.2" rx="3"/><path d="M8.6 12 L10.9 14.3 L15.7 8.6"/></svg>Fact-check</button>
+    <button class="ytbtn light done"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2f9e4f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.3 12.4 L10.8 14.9 L15.8 9"/></svg>Fact-check</button>
+  </div><p class="cap">button under the video (light): rgba(0,0,0,.05) → hover .1, text #0f0f0f</p></div>
+</div>
+
+<div class="row">
+  <div><div class="pop">
+    <div class="pop-sec who"><span class="em">you@example.com</span><button class="signout">Sign out</button></div>
+    <div class="pop-sec">
+      <div class="row"><span>Install ID</span><b>a1b2…f9</b></div>
+      <div class="row"><span>free checks today</span><b>10</b></div>
+      <div class="row"><span>credits on balance</span><b>32</b></div>
+      <div class="row"><span>check language</span><select class="vlang"><option>follow browser</option><option>Russian</option><option>English</option></select></div>
+      <div class="vlanghint">language of explanations; applies to new checks</div>
+    </div>
+    <div class="pop-sec">
+      <div class="ptitle">Credits</div>
+      <div class="cexpl">1 credit = 1 AI claim check via web search. Matches with existing human fact-checks are free.</div>
+      <div class="packs"><button class="pack">+100</button><button class="pack">+500</button><button class="pack">+2000</button></div>
+    </div>
+  </div><p class="cap">account popover: the “check language” row<br>with a 10.5px hint; r10, width 264</p></div>
+</div>
+<style>
+  .mini-demo { padding: 24px 0; }
+  .mini-circle { position: relative; width: 52px; height: 52px; border-radius: 50%; background: #16181d; border: 1px solid #3d3d3d; display: grid; place-items: center; cursor: pointer; }
+  .mini-circle:hover { filter: brightness(1.08); }
+  .mini-ico { display: inline-flex; color: #e8e8e8; }
+  .mini-circle.busy { animation: mini-pulse 1.8s ease-in-out infinite; }
+  @keyframes mini-pulse { 0%, 100% { box-shadow: 0 0 0 4px rgba(245,166,35,.10), 0 0 18px rgba(245,166,35,.25); } 50% { box-shadow: 0 0 0 6px rgba(245,166,35,.16), 0 0 22px rgba(245,166,35,.4); } }
+  .mini-x { position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; border-radius: 50%; border: 1px solid rgba(226,92,92,.6); background: #191113; color: #e25c5c; font: 600 12px/1 Roboto, sans-serif; display: grid; place-items: center; cursor: pointer; opacity: 0; transition: opacity .15s, background-color .15s, color .15s; }
+  .mini-circle:hover .mini-x { opacity: 1; }
+  .mini-x:hover { background: #e25c5c; color: #16090b; border-color: #e25c5c; }
+  .ytbtn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border: none; border-radius: 18px; background: #272727; color: #f1f1f1; border: 1px solid #3d3d3d; font: 500 14px/1 Roboto, sans-serif; cursor: pointer; }
+  .ytbtn.light { background: rgba(0,0,0,.05); color: #0f0f0f; border: none; }
+  .ytbtn.light:hover { background: rgba(0,0,0,.1); }
+  .ytbtn .cnt { font-variant-numeric: tabular-nums; }
+  .pop { width: 264px; background: #1a1d23; border: 1px solid #2c2f36; border-radius: 10px; box-shadow: -4px 4px 14px rgba(0,0,0,.4); padding: 4px 0 5px; }
+  .pop-sec { padding: 8px 12px; }
+  .pop-sec + .pop-sec { border-top: 1px solid #22252b; }
+  .who { display: flex; align-items: center; gap: 8px; }
+  .who .em { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #dfe3e8; font-size: 12px; }
+  .pop .row { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; padding: 2px 0; align-items: center; flex-wrap: nowrap; margin: 0; }
+  .pop .row span { color: #9aa0a6; }
+  .pop .row b { color: #dfe3e8; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .vlang { background: #22262e; color: #dfe3e8; border: 1px solid #2c2f36; border-radius: 8px; font: 500 12px Roboto, system-ui, sans-serif; padding: 3px 6px; cursor: pointer; }
+  .vlanghint { color: #868c94; font-size: 10.5px; margin-top: 4px; }
+  .ptitle { font-size: 12px; font-weight: 600; margin-bottom: 7px; color: #e8e8e8; }
+  .cexpl { color: #9aa0a6; font-size: 11.5px; line-height: 1.45; margin: -3px 0 9px; }
+  .packs { display: flex; gap: 6px; }
+  .pack { flex: 1; background: #22262e; border: 1px solid #2c2f36; color: #dfe3e8; border-radius: 8px; font: 500 12px Roboto, system-ui, sans-serif; font-variant-numeric: tabular-nums; padding: 6px 0; cursor: pointer; }
+  .signout { background: #2c2f36; border: none; color: #e8e8e8; border-radius: 999px; font: 600 11px Roboto, system-ui, sans-serif; padding: 5px 12px; cursor: pointer; }
+</style>
+</body>
+</html>

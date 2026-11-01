@@ -1,8 +1,8 @@
-// video-factcheck, MAIN world: мост к данным плеера YouTube.
-// Контент-скрипт в изолированном мире не видит window.ytInitialPlayerResponse,
-// поэтому этот скрипт (world: MAIN) отдаёт субтитровые треки и метаданные
-// через CustomEvent. Транскрипт качается потом самим контент-скриптом —
-// same-origin, с куками и IP пользователя: датацентровые 429 не касаются.
+// video-factcheck, MAIN world: bridge to YouTube player data.
+// The content script in the isolated world cannot see window.ytInitialPlayerResponse,
+// so this script (world: MAIN) hands out caption tracks and metadata
+// via CustomEvent. The transcript is later downloaded by the content script itself —
+// same-origin, with the user's cookies and IP: datacenter 429s do not apply.
 "use strict";
 (function () {
   function emit() {
@@ -15,7 +15,7 @@
         videoDetails: pr.videoDetails || null,
       };
       window.dispatchEvent(new CustomEvent("vfc-player-data", { detail: detail }));
-    } catch (e) { /* страница без плеера — молчим */ }
+    } catch (e) { /* page without a player — stay silent */ }
   }
   emit();
   window.addEventListener("vfc-request-data", emit);

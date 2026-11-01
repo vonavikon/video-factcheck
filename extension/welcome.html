@@ -1,175 +1,91 @@
 <!DOCTYPE html>
-<!-- video-factcheck: онбординг первого запуска (welcome).
-     Открывается автоматически при первой установке (background.js,
-     chrome.runtime.onInstalled, reason === "install"; при обновлении не открывается).
-     Решения №5 и №10 из, карточка onboarding-first-run
-     из. Внешних ресурсов нет — только системные
-     шрифты и инлайн-SVG (no remote code). -->
-<html lang="ru">
+<!-- video-factcheck: first-run onboarding (welcome).
+     Opens automatically on first install (background.js,
+     chrome.runtime.onInstalled, reason === "install"; not opened on update).
+     Decisions #5 and #10, the onboarding-first-run card.
+     No external resources — system fonts and inline SVG only (no remote code). -->
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Факт-чек YouTube — добро пожаловать</title>
+<title>YouTube Fact-Check — Welcome</title>
 <link rel="stylesheet" href="pages.css">
 </head>
 <body>
 <div class="wrap">
 
   <header class="page-head">
-    <!-- знак бренда «кадр с галочкой» (design/logo, вариант D), цвет #2F6FED -->
+    <!-- brand sign "frame with a checkmark" (design/logo, variant D), color #2F6FED -->
     <svg class="sign" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
       <rect x="4.1" y="6.4" width="15.8" height="11.2" rx="3" fill="none" stroke="#2F6FED" stroke-width="2.6"/>
       <path d="M8.6 12 L10.9 14.3 L15.7 8.6" fill="none" stroke="#2F6FED" stroke-width="2.6"
         stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
-    <h1 data-i18n="title">Факт-чек YouTube</h1>
-    <div class="lang-switch" role="group" aria-label="Language / Язык">
-      <button type="button" id="lang-ru" aria-pressed="true">RU</button>
-      <button type="button" id="lang-en" aria-pressed="false">EN</button>
-    </div>
+    <h1>YouTube Fact-Check</h1>
   </header>
-  <p class="page-sub" data-i18n="sub">Добро пожаловать! Расскажем, что умеет расширение и зачем ему разрешения.</p>
+  <p class="page-sub">Welcome! Here is what the extension does and why it needs its permissions.</p>
 
   <main>
-    <!-- что делает расширение -->
+    <!-- what the extension does -->
     <section class="card">
-      <h2 data-i18n="whatTitle">Что делает расширение</h2>
-      <p data-i18n="whatLead">Оно проверяет утверждения из YouTube-видео параллельно просмотру и показывает вердикт — «правда», «ложно» или «странно» — с ссылками на источники.</p>
+      <h2>What the extension does</h2>
+      <p>It fact-checks claims from YouTube videos while you watch and shows a verdict — true, false or unclear — with links to sources.</p>
       <ol class="steps">
-        <li data-i18n="step1">Откройте любое видео на YouTube. Под ним появится кнопка «Факт-чек».</li>
-        <li data-i18n="step2">Нажмите её — рядом с видео откроется панель, а на таймлайне плеера — карта вердиктов.</li>
-        <li data-i18n="step3">Читайте обоснования и открывайте источники: научные статьи, официальные сайты, факт-чеки.</li>
+        <li>Open any video on YouTube. A "Fact-check" button appears below it.</li>
+        <li>Click it — a panel opens next to the video, and a verdict map appears on the player timeline.</li>
+        <li>Read the explanations and open the sources: scientific papers, official sites, published fact-checks.</li>
       </ol>
-      <p class="muted" data-i18n="disclaimer">Это AI-оценка с источниками — не модерация и не рейтинг каналов.</p>
+      <p class="muted">This is an AI assessment with sources — not moderation and not a channel rating.</p>
     </section>
 
-    <!-- разрешения простым языком: те же формулировки, что в форме подачи в стор -->
+    <!-- permissions in plain language: the same wording as in the store submission form -->
     <section class="card">
-      <h2 data-i18n="permTitle">Какие разрешения и зачем</h2>
-      <p data-i18n="permLead">Расширение просит ровно три разрешения — вот что каждое из них делает:</p>
+      <h2>Permissions and why</h2>
+      <p>The extension asks for exactly three permissions — here is what each one does:</p>
       <table class="tbl">
         <thead>
-          <tr><th data-i18n="permName">Разрешение</th><th data-i18n="permWhy">Зачем</th></tr>
+          <tr><th>Permission</th><th>Why</th></tr>
         </thead>
         <tbody>
           <tr>
             <td><b>youtube.com</b></td>
-            <td data-i18n="permYt">Работа на страницах видео: кнопка «Факт-чек» и панель появляются только на youtube.com. На остальных сайтах расширение молчит.</td>
+            <td>Works on video pages: the "Fact-check" button and the panel appear on youtube.com only. The extension stays silent everywhere else.</td>
           </tr>
           <tr>
-            <td data-i18n="permApiName"><b>сервер проверки</b></td>
-            <td data-i18n="permApi">Сервер проверки: утверждения из субтитров отправляются на наш сервер — он ищет источники и возвращает вердикты. Без этого доступа проверка невозможна.</td>
+            <td><b>fact-check server</b></td>
+            <td>Fact-check server: claims from the subtitles are sent to the checking server — it searches for sources and returns verdicts. Without this access no checking is possible.</td>
           </tr>
           <tr>
             <td><b>storage</b></td>
-            <td data-i18n="permStorage">Настройки и идентификатор установки: расширение хранит локально в браузере язык проверки, баланс бесплатных проверок и историю последних проверок. Идентификатор установки — случайный ID без персональных данных.</td>
+            <td>Settings and install ID: the extension stores locally in your browser the check language, the free-check balance and the history of recent checks. The install ID is a random ID with no personal data.</td>
           </tr>
         </tbody>
       </table>
     </section>
 
-    <!-- первые шаги -->
+    <!-- first steps -->
     <section class="card">
-      <h2 data-i18n="startTitle">С чего начать</h2>
-      <p data-i18n="startLead">Откройте любое видео с субтитрами и нажмите кнопку «Факт-чек» под ним. Каждый день даётся 10 бесплатных машинных проверок; совпадения с готовыми факт-чеками людей бесплатны всегда.</p>
+      <h2>Where to start</h2>
+      <p>Open any video with subtitles and click the "Fact-check" button below it. You get 10 free machine checks every day; matches with human-made fact-checks are always free.</p>
     </section>
 
     <div class="card" style="text-align:center">
-      <button type="button" class="btn primary" id="btn-ok" data-i18n-label="okBtn">Понятно</button>
+      <button type="button" class="btn primary" id="btn-ok">Got it</button>
     </div>
   </main>
 
   <footer class="page-foot">
-    <span data-i18n="footPrivacy">Политика конфиденциальности:</span>
-    <!-- Плейсхолдер до публикации (решение №11: GitHub Pages профильного репо);
-         боевая ссылка появится вместе с листингом стора. -->
-    <a href="https://vonavikon.github.io/vonavikon/privacy" target="_blank" rel="noopener" data-i18n="footPrivacyLink">vonavikon.github.io/vonavikon/privacy</a>
+    <span>Privacy policy:</span>
+    <!-- Placeholder until publication (decision #11: GitHub Pages of the profile repo);
+         the production link will appear together with the store listing. -->
+    <a href="https://vonavikon.github.io/vonavikon/privacy" target="_blank" rel="noopener">vonavikon.github.io/vonavikon/privacy</a>
   </footer>
 </div>
 
 <script>
 "use strict";
-// Словарь RU/EN и авто-язык: как uiLang() в content.js — локаль браузера,
-// с переключателем в шапке (выбор запоминается в localStorage).
-const I18N = {
-  ru: {
-    title: "Факт-чек YouTube",
-    sub: "Добро пожаловать! Расскажем, что умеет расширение и зачем ему разрешения.",
-    whatTitle: "Что делает расширение",
-    whatLead: "Оно проверяет утверждения из YouTube-видео параллельно просмотру и показывает вердикт — «правда», «ложно» или «странно» — с ссылками на источники.",
-    step1: "Откройте любое видео на YouTube. Под ним появится кнопка «Факт-чек».",
-    step2: "Нажмите её — рядом с видео откроется панель, а на таймлайне плеера — карта вердиктов.",
-    step3: "Читайте обоснования и открывайте источники: научные статьи, официальные сайты, факт-чеки.",
-    disclaimer: "Это AI-оценка с источниками — не модерация и не рейтинг каналов.",
-    permTitle: "Какие разрешения и зачем",
-    permLead: "Расширение просит ровно три разрешения — вот что каждое из них делает:",
-    permName: "Разрешение",
-    permWhy: "Зачем",
-    permYt: "Работа на страницах видео: кнопка «Факт-чек» и панель появляются только на youtube.com. На остальных сайтах расширение молчит.",
-    permApiName: "сервер проверки",
-    permApi: "Сервер проверки: утверждения из субтитров отправляются на наш сервер — он ищет источники и возвращает вердикты. Без этого доступа проверка невозможна.",
-    permStorage: "Настройки и идентификатор установки: расширение хранит локально в браузере язык проверки, баланс бесплатных проверок и историю последних проверок. Идентификатор установки — случайный ID без персональных данных.",
-    startTitle: "С чего начать",
-    startLead: "Откройте любое видео с субтитрами и нажмите кнопку «Факт-чек» под ним. Каждый день даётся 10 бесплатных машинных проверок; совпадения с готовыми факт-чеками людей бесплатны всегда.",
-    okBtn: "Понятно",
-    footPrivacy: "Политика конфиденциальности:",
-    footPrivacyLink: "vonavikon.github.io/vonavikon/privacy",
-  },
-  en: {
-    title: "YouTube Fact-Check",
-    sub: "Welcome! Here is what the extension does and why it needs its permissions.",
-    whatTitle: "What the extension does",
-    whatLead: "It fact-checks claims from YouTube videos while you watch and shows a verdict — true, false or strange — with links to sources.",
-    step1: "Open any video on YouTube. A “Fact-check” button appears below it.",
-    step2: "Click it — a panel opens next to the video, and a verdict map appears on the player timeline.",
-    step3: "Read the explanations and open the sources: scientific papers, official sites, published fact-checks.",
-    disclaimer: "This is an AI assessment with sources — not moderation and not a channel rating.",
-    permTitle: "Permissions and why",
-    permLead: "The extension asks for exactly three permissions — here is what each one does:",
-    permName: "Permission",
-    permWhy: "Why",
-    permYt: "Works on video pages: the “Fact-check” button and the panel appear on youtube.com only. The extension stays silent everywhere else.",
-    permApiName: "fact-check server",
-    permApi: "Fact-check server: claims from the subtitles are sent to our server — it searches for sources and returns verdicts. Without this access no checking is possible.",
-    permStorage: "Settings and install ID: the extension stores locally in your browser the check language, the free-check balance and the history of recent checks. The install ID is a random ID with no personal data.",
-    startTitle: "Where to start",
-    startLead: "Open any video with subtitles and click the “Fact-check” button below it. You get 10 free machine checks every day; matches with human-made fact-checks are always free.",
-    okBtn: "Got it",
-    footPrivacy: "Privacy policy:",
-    footPrivacyLink: "vonavikon.github.io/vonavikon/privacy",
-  },
-};
-
-// авто-язык: ru → RU, en → EN, прочее → RU (дефолт проекта, как uiLang() в content.js)
-function detectLang() {
-  const saved = (localStorage.getItem("vfc_ui_lang") || "").toLowerCase();
-  if (saved === "ru" || saved === "en") return saved;
-  const nav = (navigator.language || "").toLowerCase();
-  return nav.startsWith("ru") ? "ru" : nav.startsWith("en") ? "en" : "ru";
-}
-
-function applyLang(lang) {
-  const L = I18N[lang] || I18N.ru;
-  document.documentElement.lang = lang;
-  document.querySelectorAll("[data-i18n]").forEach((el) => {
-    const v = L[el.dataset.i18n];
-    if (v !== undefined) el.textContent = v;
-  });
-  document.querySelectorAll("[data-i18n-label]").forEach((el) => {
-    const v = L[el.dataset.i18nLabel];
-    if (v !== undefined) el.setAttribute("aria-label", v);
-  });
-  document.getElementById("btn-ok").textContent = L.okBtn;
-  document.getElementById("lang-ru").setAttribute("aria-pressed", String(lang === "ru"));
-  document.getElementById("lang-en").setAttribute("aria-pressed", String(lang === "en"));
-}
-
-document.getElementById("lang-ru").addEventListener("click", () => { localStorage.setItem("vfc_ui_lang", "ru"); applyLang("ru"); });
-document.getElementById("lang-en").addEventListener("click", () => { localStorage.setItem("vfc_ui_lang", "en"); applyLang("en"); });
-applyLang(detectLang());
-
-// «Понятно» закрывает вкладку. На странице расширения — через chrome.tabs;
-// при открытии файла напрямую (без API) — window.close().
+// "Got it" closes the tab. On an extension page — via chrome.tabs;
+// when the file is opened directly (no APIs) — window.close().
 document.getElementById("btn-ok").addEventListener("click", () => {
   try {
     if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.getCurrent) {
@@ -179,7 +95,7 @@ document.getElementById("btn-ok").addEventListener("click", () => {
       });
       return;
     }
-  } catch { /* file:// — без chrome.* */ }
+  } catch { /* file:// — no chrome.* */ }
   window.close();
 });
 </script>

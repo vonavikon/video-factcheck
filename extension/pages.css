@@ -1,15 +1,15 @@
-/* video-factcheck: общий стиль служебных страниц расширения
+/* video-factcheck: shared style of the extension utility pages
  * (welcome.html, account.html, options.html).
  *
- * Источник цветов — design/tokens.json (тёмная тема = базовые токены панели).
- * Светлая тема — производные тех же тонов для prefers-color-scheme: light
- * (в tokens.json светлых значений нет; производные держат те же семантические
- * пары «заливка + цветной текст» из правила design/design.md №2).
- * Шрифты — только системный стек (design/design.md «Границы мира»: никаких
- * внешних ресурсов). Радиусы: объекты-пилюли, карточки 8, контейнеры 12.
+ * Colors come from design/tokens.json (dark theme = base panel tokens).
+ * The light theme is derived from the same hues for prefers-color-scheme: light
+ * (tokens.json has no light values; the derivatives keep the same semantic
+ * "fill + colored text" pairs from design/design.md rule #2).
+ * Fonts — the system stack only (design/design.md "World boundaries": no
+ * external resources). Radii: pill objects, cards 8, containers 12.
  */
 
-/* — тёмная тема (по умолчанию, токены tokens.json) — */
+/* — dark theme (default, tokens.json tokens) — */
 :root {
   --bg: #0f0f0f;               /* player_page */
   --panel: #16181d;            /* surface.panel */
@@ -21,12 +21,12 @@
   --text: #e8e8e8;             /* text.primary */
   --text-2: #dfe3e8;           /* text.secondary */
   --muted: #9aa0a6;            /* text.muted */
-  --link: #3ea6ff;             /* action.link (YouTube-синий) */
+  --link: #3ea6ff;             /* action.link (YouTube blue) */
   --primary-bg: #cc2b24;       /* action.primary_bg */
   --primary-fg: #ffffff;       /* action.primary_text */
   --primary-hover: #e1362e;
-  --sign: #2F6FED;             /* brand.sign — знак «кадр с галочкой» */
-  /* вердикт-пары tint+fg (verdict.*) */
+  --sign: #2F6FED;             /* brand.sign — the "frame with a checkmark" sign */
+  /* verdict tint+fg pairs (verdict.*) */
   --v-true-bg: #1d3a24;  --v-true-fg: #7bd88f;
   --v-false-bg: #3d1a18; --v-false-fg: #ff8a80;
   --v-strange-bg: #3a331a; --v-strange-fg: #ffd666;
@@ -37,7 +37,7 @@
   --mono: "Roboto Mono", "Cascadia Mono", Consolas, monospace;
 }
 
-/* — светлая тема: производные токенов (см. комментарий в шапке) — */
+/* — light theme: derivatives of the tokens (see the header comment) — */
 @media (prefers-color-scheme: light) {
   :root {
     --bg: #f4f5f7;
@@ -50,7 +50,7 @@
     --text: #1b1d22;
     --text-2: #2e3238;
     --muted: #5f656d;
-    --link: #065fd4;           /* тот же платформенный синий, тёмный вариант для контраста AA */
+    --link: #065fd4;           /* the same platform blue, a dark variant for AA contrast */
     --primary-bg: #cc2b24;
     --primary-fg: #ffffff;
     --primary-hover: #b1251f;
@@ -80,7 +80,7 @@ body {
   padding: 32px 20px 48px;
 }
 
-/* — шапка страницы: знак + название + переключатель языка — */
+/* — page header: sign + title — */
 .page-head {
   display: flex;
   align-items: center;
@@ -110,7 +110,7 @@ body {
   letter-spacing: .04em;
   padding: 7px 12px;
   cursor: pointer;
-  transition: color 120ms, background-color 120ms; /* темп ховеров — 120ms */
+  transition: color 120ms, background-color 120ms; /* hover timing — 120ms */
 }
 .lang-switch button[aria-pressed="true"] {
   background: var(--now-bg);
@@ -120,7 +120,7 @@ body {
 
 .page-sub { color: var(--muted); margin: 0 0 24px; }
 
-/* — карточки-секции — */
+/* — section cards — */
 .card {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -137,7 +137,7 @@ body {
 .card p:last-child { margin-bottom: 0; }
 .card .muted { color: var(--muted); font-size: 12px; }
 
-/* список шагов/пунктов */
+/* list of steps/items */
 .steps { margin: 0; padding: 0; list-style: none; counter-reset: step; }
 .steps li {
   counter-increment: step;
@@ -160,7 +160,7 @@ body {
   text-align: center;
 }
 
-/* — бейджи-пилюли вердиктов (пары tint+fg из tokens) — */
+/* — verdict pill badges (tint+fg pairs from tokens) — */
 .pill {
   display: inline-flex;
   align-items: center;
@@ -176,13 +176,13 @@ body {
 .pill.v-strange { background: var(--v-strange-bg); color: var(--v-strange-fg); }
 .pill.v-none    { background: var(--v-none-bg);    color: var(--v-none-fg); }
 
-/* статус прогона в истории: точка + слово */
+/* run status in history: dot + word */
 .st { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
 .st::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
-.st.done::before { background: #2f9e4f; }   /* timeline.true — «всё хорошо» */
+.st.done::before { background: #2f9e4f; }   /* timeline.true — "all good" */
 .st.error::before { background: #e5484d; }  /* timeline.false */
 
-/* — кнопки — */
+/* — buttons — */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -209,12 +209,12 @@ body {
 .btn.primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
 .btn[disabled] { opacity: .55; cursor: default; }
 
-/* — ссылки — */
+/* — links — */
 a { color: var(--link); text-decoration: none; }
 a:hover { text-decoration: underline; }
 a:focus-visible { outline: 2px solid var(--sign); outline-offset: 2px; border-radius: 4px; }
 
-/* — поля форм (options) — */
+/* — form fields (options) — */
 .field { margin: 0 0 16px; }
 .field:last-child { margin-bottom: 0; }
 .field label { display: block; font-weight: 500; margin-bottom: 6px; }
@@ -233,7 +233,7 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--sign); outl
 .check-row { display: flex; align-items: flex-start; gap: 10px; }
 .check-row input[type="checkbox"] { width: 16px; height: 16px; margin: 3px 0 0; accent-color: var(--sign); }
 
-/* — таблица «что бесплатно / что стоит» — */
+/* — the "what's free / what costs credits" table — */
 table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .tbl th, .tbl td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--divider); vertical-align: top; }
 .tbl th { color: var(--muted); font-weight: 500; font-size: 12px; }
@@ -241,7 +241,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .tbl .free { color: var(--v-true-fg); font-weight: 600; }
 .tbl .paid { color: var(--v-strange-fg); font-weight: 600; }
 
-/* — история: карточка видео — */
+/* — history: video card — */
 .h-item { border-bottom: 1px solid var(--divider); }
 .h-item:last-child { border-bottom: 0; }
 .h-item summary {
@@ -261,10 +261,10 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .h-body { padding: 4px 4px 14px; }
 .h-body .sum { color: var(--muted); font-size: 12px; margin: 0 0 8px; }
 
-/* карточка утверждения внутри раскрытой истории */
+/* claim card inside an expanded history entry */
 .claim {
   display: grid;
-  grid-template-columns: 46px 1fr;   /* единая колонка таймкодов — 46px (design.md) */
+  grid-template-columns: 46px 1fr;   /* one shared timecode column — 46px (design.md) */
   gap: 0 10px;
   padding: 8px 0;
   border-top: 1px solid var(--divider);
@@ -280,11 +280,11 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .claim .ctext { margin: 2px 0 0; color: var(--text-2); }
 .claim .cwhy { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
 
-/* — пустое состояние — */
+/* — empty state — */
 .empty { text-align: center; padding: 36px 16px; color: var(--muted); }
 .empty b { display: block; color: var(--text); font-size: 15px; margin-bottom: 6px; }
 
-/* — статистика (расход за 30 дней) — */
+/* — usage stats (over 30 days) — */
 .stats { display: flex; gap: 12px; flex-wrap: wrap; }
 .stat {
   flex: 1 1 140px;
@@ -295,7 +295,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .stat b { display: block; font-size: 22px; font-weight: 600; }
 .stat span { color: var(--muted); font-size: 12px; }
 
-/* — футер — */
+/* — footer — */
 .page-foot {
   color: var(--muted);
   font-size: 12px;
@@ -306,14 +306,14 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 }
 .page-foot .ver { font-family: var(--mono); }
 
-/* уведомление о сохранении (options) */
+/* save notification (options) */
 .saved { color: #2f9e4f; font-size: 12px; visibility: hidden; }
 .saved.show { visibility: visible; }
 
-/* спрятанный до переключения языка контент не должен мигать */
+/* content hidden until a language switch must not flicker */
 [hidden] { display: none !important; }
 
-/* prefers-reduced-motion: движение гасится (design.md «Доступность») */
+/* prefers-reduced-motion: motion is toned down (design.md "Accessibility") */
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
