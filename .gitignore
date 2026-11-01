@@ -1,0 +1,18 @@
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+backend/.venv/
+data/*.db
+data/claimreview/
+data/transcripts/
+data/reports/
+.tmp/
+.mcp.json
+data/*.log
+skills-lock.json
+
+.agent-teams/
+
+# runtime artifacts (создаёт сервер/тесты)
+data/

@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- A. «Плэй-чек»: play-треугольник = видео, галочка = проверка.
+       Ниша свободна (у факт-чекеров нет play-знаков), красный не берём —
+       красный треугольник читается как YouTube. -->
+  <path d="M52 28 L100 64 L52 100 Z" fill="#2F6FED" stroke="#2F6FED" stroke-width="16" stroke-linejoin="round"/>
+  <path d="M58 66 L68 76 L84 56" fill="none" stroke="#ffffff" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

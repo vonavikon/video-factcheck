@@ -1,0 +1,319 @@
+/* video-factcheck: общий стиль служебных страниц расширения
+ * (welcome.html, account.html, options.html).
+ *
+ * Источник цветов — design/tokens.json (тёмная тема = базовые токены панели).
+ * Светлая тема — производные тех же тонов для prefers-color-scheme: light
+ * (в tokens.json светлых значений нет; производные держат те же семантические
+ * пары «заливка + цветной текст» из правила design/design.md №2).
+ * Шрифты — только системный стек (design/design.md «Границы мира»: никаких
+ * внешних ресурсов). Радиусы: объекты-пилюли, карточки 8, контейнеры 12.
+ */
+
+/* — тёмная тема (по умолчанию, токены tokens.json) — */
+:root {
+  --bg: #0f0f0f;               /* player_page */
+  --panel: #16181d;            /* surface.panel */
+  --panel-hover: #1a1d23;      /* surface.panel_hover */
+  --card: #1d2027;             /* surface.expanded_card_bg */
+  --now-bg: #22262e;           /* surface.now_bg */
+  --border: #2c2f36;           /* surface.panel_border */
+  --divider: #22252b;          /* surface.panel_divider */
+  --text: #e8e8e8;             /* text.primary */
+  --text-2: #dfe3e8;           /* text.secondary */
+  --muted: #9aa0a6;            /* text.muted */
+  --link: #3ea6ff;             /* action.link (YouTube-синий) */
+  --primary-bg: #cc2b24;       /* action.primary_bg */
+  --primary-fg: #ffffff;       /* action.primary_text */
+  --primary-hover: #e1362e;
+  --sign: #2F6FED;             /* brand.sign — знак «кадр с галочкой» */
+  /* вердикт-пары tint+fg (verdict.*) */
+  --v-true-bg: #1d3a24;  --v-true-fg: #7bd88f;
+  --v-false-bg: #3d1a18; --v-false-fg: #ff8a80;
+  --v-strange-bg: #3a331a; --v-strange-fg: #ffd666;
+  --v-none-bg: #26292f;  --v-none-fg: #9aa0a6;
+  --r-panel: 12px;             /* radius.panel */
+  --r-card: 8px;               /* radius.card_state */
+  --r-pill: 999px;             /* radius.badge_pill / button_pill */
+  --mono: "Roboto Mono", "Cascadia Mono", Consolas, monospace;
+}
+
+/* — светлая тема: производные токенов (см. комментарий в шапке) — */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f4f5f7;
+    --panel: #ffffff;
+    --panel-hover: #f4f5f7;
+    --card: #f1f3f5;
+    --now-bg: #e9ebee;
+    --border: #d3d6dc;
+    --divider: #e3e5e9;
+    --text: #1b1d22;
+    --text-2: #2e3238;
+    --muted: #5f656d;
+    --link: #065fd4;           /* тот же платформенный синий, тёмный вариант для контраста AA */
+    --primary-bg: #cc2b24;
+    --primary-fg: #ffffff;
+    --primary-hover: #b1251f;
+    --v-true-bg: rgba(47, 158, 79, .13);  --v-true-fg: #1e7a3c;
+    --v-false-bg: rgba(229, 72, 77, .12); --v-false-fg: #b3272c;
+    --v-strange-bg: rgba(217, 176, 47, .16); --v-strange-fg: #7a5f0f;
+    --v-none-bg: #eceef1;  --v-none-fg: #5f656d;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: Roboto, "Segoe UI", system-ui, sans-serif; /* font.family_ui */
+  font-size: 14px;
+  line-height: 1.5;            /* font.line_height */
+  min-height: 100vh;
+}
+
+.wrap {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 32px 20px 48px;
+}
+
+/* — шапка страницы: знак + название + переключатель языка — */
+.page-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.page-head .sign { flex: none; }
+.page-head h1 {
+  font-size: 20px;
+  font-weight: 600;            /* font.weight.bold */
+  margin: 0;
+  flex: 1 1 auto;
+}
+.lang-switch {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  flex: none;
+}
+.lang-switch button {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: 600 11px/1 inherit;
+  letter-spacing: .04em;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: color 120ms, background-color 120ms; /* темп ховеров — 120ms */
+}
+.lang-switch button[aria-pressed="true"] {
+  background: var(--now-bg);
+  color: var(--text);
+}
+.lang-switch button:focus-visible { outline: 2px solid var(--sign); outline-offset: -2px; }
+
+.page-sub { color: var(--muted); margin: 0 0 24px; }
+
+/* — карточки-секции — */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--r-panel);
+  padding: 16px;
+  margin: 0 0 16px;
+}
+.card h2 {
+  font-size: 15px;             /* font.scale.title */
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+.card p { margin: 0 0 8px; color: var(--text-2); }
+.card p:last-child { margin-bottom: 0; }
+.card .muted { color: var(--muted); font-size: 12px; }
+
+/* список шагов/пунктов */
+.steps { margin: 0; padding: 0; list-style: none; counter-reset: step; }
+.steps li {
+  counter-increment: step;
+  position: relative;
+  padding: 0 0 10px 36px;
+  color: var(--text-2);
+}
+.steps li:last-child { padding-bottom: 0; }
+.steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 1px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--now-bg);
+  color: var(--text);
+  font: 600 12px/24px inherit;
+  text-align: center;
+}
+
+/* — бейджи-пилюли вердиктов (пары tint+fg из tokens) — */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: var(--r-pill);
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 700;            /* font.weight.badge */
+  white-space: nowrap;
+}
+.pill.v-true    { background: var(--v-true-bg);    color: var(--v-true-fg); }
+.pill.v-false   { background: var(--v-false-bg);   color: var(--v-false-fg); }
+.pill.v-strange { background: var(--v-strange-bg); color: var(--v-strange-fg); }
+.pill.v-none    { background: var(--v-none-bg);    color: var(--v-none-fg); }
+
+/* статус прогона в истории: точка + слово */
+.st { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.st::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
+.st.done::before { background: #2f9e4f; }   /* timeline.true — «всё хорошо» */
+.st.error::before { background: #e5484d; }  /* timeline.false */
+
+/* — кнопки — */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;            /* size.action_button_height */
+  padding: 0 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  background: var(--panel-hover);
+  color: var(--text);
+  font: 500 14px/1 inherit;
+  cursor: pointer;
+  transition: background-color 120ms, border-color 120ms, color 120ms;
+}
+.btn:hover { background: var(--now-bg); }
+.btn:focus-visible { outline: 2px solid var(--sign); outline-offset: 2px; }
+.btn.primary {
+  background: var(--primary-bg);
+  border-color: var(--primary-bg);
+  color: var(--primary-fg);
+  font-weight: 600;
+}
+.btn.primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+.btn[disabled] { opacity: .55; cursor: default; }
+
+/* — ссылки — */
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+a:focus-visible { outline: 2px solid var(--sign); outline-offset: 2px; border-radius: 4px; }
+
+/* — поля форм (options) — */
+.field { margin: 0 0 16px; }
+.field:last-child { margin-bottom: 0; }
+.field label { display: block; font-weight: 500; margin-bottom: 6px; }
+.field .hint { color: var(--muted); font-size: 12px; margin-top: 4px; }
+select, input[type="text"], input[type="url"] {
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-card);
+  background: var(--now-bg);
+  color: var(--text);
+  font: inherit;
+}
+select:focus-visible, input:focus-visible { outline: 2px solid var(--sign); outline-offset: 1px; }
+.check-row { display: flex; align-items: flex-start; gap: 10px; }
+.check-row input[type="checkbox"] { width: 16px; height: 16px; margin: 3px 0 0; accent-color: var(--sign); }
+
+/* — таблица «что бесплатно / что стоит» — */
+table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th, .tbl td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--divider); vertical-align: top; }
+.tbl th { color: var(--muted); font-weight: 500; font-size: 12px; }
+.tbl tr:last-child td { border-bottom: 0; }
+.tbl .free { color: var(--v-true-fg); font-weight: 600; }
+.tbl .paid { color: var(--v-strange-fg); font-weight: 600; }
+
+/* — история: карточка видео — */
+.h-item { border-bottom: 1px solid var(--divider); }
+.h-item:last-child { border-bottom: 0; }
+.h-item summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 12px 4px;
+  cursor: pointer;
+  list-style: none;
+}
+.h-item summary::-webkit-details-marker { display: none; }
+.h-item summary:hover { background: var(--panel-hover); }
+.h-item summary:focus-visible { outline: 2px solid var(--sign); outline-offset: -2px; border-radius: var(--r-card); }
+.h-item .date { color: var(--muted); font-size: 12px; margin-left: auto; white-space: nowrap; }
+.h-item .vid { font-family: var(--mono); font-size: 12px; color: var(--link); }
+.h-body { padding: 4px 4px 14px; }
+.h-body .sum { color: var(--muted); font-size: 12px; margin: 0 0 8px; }
+
+/* карточка утверждения внутри раскрытой истории */
+.claim {
+  display: grid;
+  grid-template-columns: 46px 1fr;   /* единая колонка таймкодов — 46px (design.md) */
+  gap: 0 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--divider);
+}
+.claim .ts {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+  padding-top: 2px;
+}
+.claim .cbody { min-width: 0; }
+.claim .ctext { margin: 2px 0 0; color: var(--text-2); }
+.claim .cwhy { margin: 2px 0 0; color: var(--muted); font-size: 12px; }
+
+/* — пустое состояние — */
+.empty { text-align: center; padding: 36px 16px; color: var(--muted); }
+.empty b { display: block; color: var(--text); font-size: 15px; margin-bottom: 6px; }
+
+/* — статистика (расход за 30 дней) — */
+.stats { display: flex; gap: 12px; flex-wrap: wrap; }
+.stat {
+  flex: 1 1 140px;
+  background: var(--card);
+  border-radius: var(--r-card);
+  padding: 12px 14px;
+}
+.stat b { display: block; font-size: 22px; font-weight: 600; }
+.stat span { color: var(--muted); font-size: 12px; }
+
+/* — футер — */
+.page-foot {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+}
+.page-foot .ver { font-family: var(--mono); }
+
+/* уведомление о сохранении (options) */
+.saved { color: #2f9e4f; font-size: 12px; visibility: hidden; }
+.saved.show { visibility: visible; }
+
+/* спрятанный до переключения языка контент не должен мигать */
+[hidden] { display: none !important; }
+
+/* prefers-reduced-motion: движение гасится (design.md «Доступность») */
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}

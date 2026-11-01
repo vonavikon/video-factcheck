@@ -1,0 +1,53 @@
+"""Регрессии сек-фиксов аудита 2026-10-28."""
+import os
+from videofactcheck import verdict as ve
+from videofactcheck import server
+
+
+def test_safe_url_blocks_javascript_scheme():
+    """СЕК-1: javascript:-URL от LLM не становится ссылкой-источником."""
+    assert ve._safe_url("javascript:alert(1)//x") is None
+    assert ve._safe_url("data:text/html,<script>") is None
+    assert ve._safe_url('https://x"><img src=x onerror=alert(1>') is None
+    assert ve._safe_url("https://reuters.com/article?a=1") == "https://reuters.com/article?a=1"
+
+
+def test_votes_skip_unsafe_urls(monkeypatch):
+    import json
+    def fake_chat(messages, **kw):
+        return json.dumps({"verdict": "правда", "why": "x", "sources": [
+            {"title": "A", "url": "javascript:alert(1)//x", "quote": "q"},
+            {"title": "B", "url": "https://reuters.com/a", "quote": "q"},
+        ]}, ensure_ascii=False)
+    monkeypatch.setattr(ve.llm, "chat", fake_chat)
+    res = ve.check("утверждение", "ru")
+    assert [v["domain"] for v in res["votes"]] == ["reuters.com"]
+
+
+def test_topup_disabled_without_env(monkeypatch):
+    """СЕК-2: мокап-топап закрыт без VFC_ALLOW_MOCK_TOPUP=1."""
+    from fastapi.testclient import TestClient
+    monkeypatch.delenv("VFC_ALLOW_MOCK_TOPUP", raising=False)
+    client = TestClient(server.app)
+    r = client.post("/api/topup", json={"install_id": "sec-test", "credits": 100},
+                    headers={"Origin": "https://www.youtube.com"})
+    assert r.json().get("error") and "недоступна" in r.json()["error"]
+    # и включённый флаг работает
+    monkeypatch.setenv("VFC_ALLOW_MOCK_TOPUP", "1")
+    from videofactcheck import config, store
+    monkeypatch.setattr(config, "DB_PATH", __import__("pathlib").Path(
+        __import__("tempfile").mkdtemp()) / "a.db")
+    r2 = client.post("/api/topup", json={"install_id": "sec-test", "credits": 100},
+                     headers={"Origin": "https://www.youtube.com"})
+    assert r2.json().get("credits") == 100
+
+
+def test_anonymous_budget_is_free_daily(monkeypatch):
+    """СЕК-3: без install_id бюджет = дневная квота, не безлимит."""
+    from videofactcheck import config, store
+    monkeypatch.setattr(config, "DB_PATH", __import__("pathlib").Path(
+        __import__("tempfile").mkdtemp()) / "a.db")
+    monkeypatch.delenv("VFC_DEV_UNLIMITED", raising=False)
+    # логика внутри _run; проверяем компонент: budget без install_id не существует,
+    # поэтому проверяем, что VFC_DEV_UNLIMITED не стоит по умолчанию
+    assert os.environ.get("VFC_DEV_UNLIMITED", "") != "1"

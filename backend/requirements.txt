@@ -1,0 +1,10 @@
+# Рантайм бэкенда videofactcheck (те же зависимости — в backend/pyproject.toml).
+# fastapi/uvicorn — REST-сервер (vfc serve); httpx — LLM, поиск, Europe PMC/OpenAlex;
+# pydantic — схемы запросов сервера; yt-dlp — субтитры (вызывается как консольная утилита);
+# langfuse — трейсинг, опционален: без ключей LANGFUSE_* превращается в no-op.
+fastapi
+uvicorn
+httpx
+pydantic
+yt-dlp
+langfuse

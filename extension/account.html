@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<!-- video-factcheck: страница истории проверок (личный кабинет, уровень 1).
+     Решение №7 из; данные — vfc_history в
+     chrome.storage.local (формат записи сверен с saveHistory/restoreHistory
+     в extension/content.js: { [videoId]: { runId, claims[], summary, status,
+     error, at } }, лимит 50 записей). Заголовок и канал в записи не хранятся —
+     показываем videoId со ссылкой на видео. Транскрипт в истории не хранится.
+     Внешних ресурсов нет (no remote code). -->
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Факт-чек YouTube — история проверок</title>
+<link rel="stylesheet" href="pages.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page-head">
+    <!-- знак бренда «кадр с галочкой» (design/logo, вариант D) -->
+    <svg class="sign" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+      <rect x="4.1" y="6.4" width="15.8" height="11.2" rx="3" fill="none" stroke="#2F6FED" stroke-width="2.6"/>
+      <path d="M8.6 12 L10.9 14.3 L15.7 8.6" fill="none" stroke="#2F6FED" stroke-width="2.6"
+        stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <h1 data-i18n="title">История проверок</h1>
+    <div class="lang-switch" role="group" aria-label="Language / Язык">
+      <button type="button" id="lang-ru" aria-pressed="true">RU</button>
+      <button type="button" id="lang-en" aria-pressed="false">EN</button>
+    </div>
+  </header>
+  <p class="page-sub" data-i18n="sub">Последние 50 проверенных видео — локально, в этом браузере.</p>
+
+  <main>
+    <!-- расход бесплатных проверок за 30 дней (считается по записям истории) -->
+    <section class="card">
+      <h2 data-i18n="usageTitle">Расход проверок за 30 дней</h2>
+      <div class="stats" id="usage-stats"></div>
+      <p class="muted" style="margin-top:10px" data-i18n="usageHint">Считается по локальной истории: завершённые проверки за последние 30 дней.</p>
+    </section>
+
+    <!-- список проверок -->
+    <section class="card" id="list-card">
+      <h2 data-i18n="listTitle">Проверенные видео</h2>
+      <div id="history-list">
+        <div class="empty">
+          <b data-i18n="emptyTitle">Пока ничего не проверяли</b>
+          <span data-i18n="emptyHint">Откройте видео на YouTube и нажмите кнопку «Факт-чек» под ним — результаты появятся здесь.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- что бесплатно / что стоит -->
+    <section class="card">
+      <h2 data-i18n="pricingTitle">Что бесплатно, что стоит</h2>
+      <table class="tbl">
+        <thead>
+          <tr><th data-i18n="prWhat">Действие</th><th data-i18n="prCost">Стоимость</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td data-i18n="prTranscript">Транскрипт и разбор утверждений</td>
+            <td class="free" data-i18n="prFree1">бесплатно</td>
+          </tr>
+          <tr>
+            <td data-i18n="prClaimReview">Вердикт из готового факт-чека (ClaimReview — уже проверили люди)</td>
+            <td class="free" data-i18n="prFree2">бесплатно</td>
+          </tr>
+          <tr>
+            <td data-i18n="prMachine">Машинный вердикт утверждения (веб-поиск с источниками)</td>
+            <td class="paid" data-i18n="prPaid">1 кредит</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="muted" style="margin-top:10px" data-i18n="prHint">Каждый день начисляется 10 бесплатных машинных проверок. 1 кредит = 1 машинная проверка.</p>
+    </section>
+  </main>
+
+  <footer class="page-foot">
+    <span data-i18n="footLocal">История хранится локально и не покидает этот браузер.</span>
+  </footer>
+</div>
+
+<script>
+"use strict";
+// Словарь RU/EN. Вердикты бэкенда — русские ключи данных («правда»/«ложно»/
+// «странно»), переводится только вывод — как verdictLabel() в content.js.
+const I18N = {
+  ru: {
+    title: "История проверок",
+    sub: "Последние 50 проверенных видео — локально, в этом браузере.",
+    usageTitle: "Расход проверок за 30 дней",
+    usageRuns: "завершённых проверок",
+    usageChecked: "проверено утверждений",
+    usageHint: "Считается по локальной истории: завершённые проверки за последние 30 дней.",
+    listTitle: "Проверенные видео",
+    emptyTitle: "Пока ничего не проверяли",
+    emptyHint: "Откройте видео на YouTube и нажмите кнопку «Факт-чек» под ним — результаты появятся здесь.",
+    statusDone: "готово",
+    statusError: "ошибка",
+    video: "видео",
+    openOnYoutube: "открыть на YouTube",
+    checkedOf: "проверено {checked} из {total} утверждений",
+    noClaims: "Проверяемых утверждений не нашлось",
+    claimsList: "Утверждения",
+    claim: "утверждение",
+    quoteNote: "цитата из видео (не проверено)",
+    vTrue: "правда", vFalse: "ложно", vStrange: "странно", vNone: "не проверено",
+    pricingTitle: "Что бесплатно, что стоит",
+    prWhat: "Действие",
+    prCost: "Стоимость",
+    prTranscript: "Транскрипт и разбор утверждений",
+    prFree1: "бесплатно",
+    prClaimReview: "Вердикт из готового факт-чека (ClaimReview — уже проверили люди)",
+    prFree2: "бесплатно",
+    prMachine: "Машинный вердикт утверждения (веб-поиск с источниками)",
+    prPaid: "1 кредит",
+    prHint: "Каждый день начисляется 10 бесплатных машинных проверок. 1 кредит = 1 машинная проверка.",
+    footLocal: "История хранится локально и не покидает этот браузер.",
+    storageUnavailable: "Хранилище расширения недоступно (страница открыта как файл).",
+  },
+  en: {
+    title: "Check history",
+    sub: "The last 50 checked videos — locally, in this browser.",
+    usageTitle: "Checks used over 30 days",
+    usageRuns: "completed checks",
+    usageChecked: "claims checked",
+    usageHint: "Computed from the local history: completed checks in the last 30 days.",
+    listTitle: "Checked videos",
+    emptyTitle: "Nothing checked yet",
+    emptyHint: "Open a video on YouTube and click the “Fact-check” button below it — results will appear here.",
+    statusDone: "done",
+    statusError: "error",
+    video: "video",
+    openOnYoutube: "open on YouTube",
+    checkedOf: "{checked} of {total} claims checked",
+    noClaims: "No checkable claims found",
+    claimsList: "Claims",
+    claim: "claim",
+    quoteNote: "quote from the video (unchecked)",
+    vTrue: "true", vFalse: "false", vStrange: "strange", vNone: "unchecked",
+    pricingTitle: "What is free, what costs",
+    prWhat: "Action",
+    prCost: "Cost",
+    prTranscript: "Transcript and claim extraction",
+    prFree1: "free",
+    prClaimReview: "Verdict from a published fact-check (ClaimReview — already verified by people)",
+    prFree2: "free",
+    prMachine: "Machine verdict for a claim (web search with sources)",
+    prPaid: "1 credit",
+    prHint: "10 free machine checks are granted every day. 1 credit = 1 machine check.",
+    footLocal: "The history is stored locally and never leaves this browser.",
+    storageUnavailable: "Extension storage is unavailable (page opened as a file).",
+  },
+};
+
+const DAY_MS = 24 * 3600e3;
+const HISTORY_LIMIT = 50;   // лимит хранения vfc_history (content.js, saveHistory)
+
+function detectLang() {
+  const saved = (localStorage.getItem("vfc_ui_lang") || "").toLowerCase();
+  if (saved === "ru" || saved === "en") return saved;
+  const nav = (navigator.language || "").toLowerCase();
+  return nav.startsWith("ru") ? "ru" : nav.startsWith("en") ? "en" : "ru";
+}
+let LANG = detectLang();
+function tr(key, vars) {
+  let s = (I18N[LANG] || I18N.ru)[key] || "";
+  if (vars) for (const k in vars) s = s.replaceAll(`{${k}}`, String(vars[k]));
+  return s;
+}
+function escapeHtml(s) {
+  return String(s === undefined || s === null ? "" : s)
+    .replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;").replaceAll("'", "&#39;");
+}
+function verdictLabel(v) {
+  return v === "правда" ? tr("vTrue") : v === "ложно" ? tr("vFalse")
+       : v === "странно" ? tr("vStrange") : tr("vNone");
+}
+function verdictClass(v) {
+  return v === "правда" ? "v-true" : v === "ложно" ? "v-false"
+       : v === "странно" ? "v-strange" : "v-none";
+}
+function fmtDate(ts) {
+  const d = new Date(ts);
+  return d.toLocaleString(LANG === "en" ? "en-US" : "ru-RU",
+    { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+}
+// таймкод m:ss — как fmtTS в content.js
+function fmtTS(sec) {
+  const s = Math.max(0, Math.floor(Number(sec) || 0));
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+function applyStaticLang() {
+  const L = I18N[LANG] || I18N.ru;
+  document.documentElement.lang = LANG;
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    const v = L[el.dataset.i18n];
+    if (v !== undefined) el.textContent = v;
+  });
+  document.getElementById("lang-ru").setAttribute("aria-pressed", String(LANG === "ru"));
+  document.getElementById("lang-en").setAttribute("aria-pressed", String(LANG === "en"));
+}
+
+// счётчики вердиктов: из summary.counts, фолбэк — пересчёт по claims
+function countsOf(h) {
+  const c = (h.summary && h.summary.counts) || null;
+  if (c && (c["правда"] || c["ложно"] || c["странно"] || c["не проверено"])) return c;
+  const out = { "правда": 0, "ложно": 0, "странно": 0, "не проверено": 0 };
+  (h.claims || []).forEach((cl) => {
+    const v = cl && cl.verdict;
+    if (v === "правда" || v === "ложно" || v === "странно") out[v] += 1;
+    else out["не проверено"] += 1;
+  });
+  return out;
+}
+
+function pillRow(counts) {
+  const L = I18N[LANG] || I18N.ru;
+  const items = [
+    { k: "правда", cls: "v-true", label: L.vTrue },
+    { k: "ложно", cls: "v-false", label: L.vFalse },
+    { k: "странно", cls: "v-strange", label: L.vStrange },
+    { k: "не проверено", cls: "v-none", label: L.vNone },
+  ];
+  return items.map((i) => `<span class="pill ${i.cls}">${i.label} ${counts[i.k] || 0}</span>`).join(" ");
+}
+
+// одна карточка видео: summary — свернутое состояние, body — раскрытое
+function historyItemHTML(videoId, h) {
+  const counts = countsOf(h);
+  const done = h.status === "done";
+  const stCls = done ? "done" : h.status === "error" ? "error" : "";
+  const stLabel = done ? tr("statusDone") : h.status === "error" ? tr("statusError") : (h.status || "—");
+  const link = `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
+  const checked = (h.summary && h.summary.checked) ||
+    ((counts["правда"] || 0) + (counts["ложно"] || 0) + (counts["странно"] || 0));
+  const total = (h.summary && h.summary.claims_total) || (h.claims || []).length;
+  const noClaims = h.summary && h.summary.no_claims;
+  // карточки утверждений: таймкод-ссылка на видео, бейдж, текст, обоснование
+  const claims = (h.claims || []).slice().sort((a, b) => (a.t_start || 0) - (b.t_start || 0));
+  const claimRows = claims.map((c) => {
+    const v = c.verdict || null;
+    const t = Math.floor(c.t_start || 0);
+    const text = v ? (c.claim || "") : ((c.quote || c.claim || "").trim());
+    const why = v ? (c.why || "") : "";
+    const cls = verdictClass(v);
+    const label = v ? verdictLabel(v) : tr("vNone");
+    return `<div class="claim" role="article" aria-label="${escapeHtml(tr("claim"))}, ${escapeHtml(label)}, ${fmtTS(t)}">
+      <a class="ts" href="${link}&t=${t}s" target="_blank" rel="noopener">${fmtTS(t)}</a>
+      <div class="cbody">
+        <span class="pill ${cls}">${escapeHtml(label)}</span>
+        <p class="ctext">${escapeHtml(text)}${v ? "" : `<span class="muted"> · ${escapeHtml(tr("quoteNote"))}</span>`}</p>
+        ${why ? `<p class="cwhy">${escapeHtml(why)}</p>` : ""}
+      </div>
+    </div>`;
+  }).join("");
+  const body = `
+    <div class="h-body">
+      <p class="sum">${noClaims ? escapeHtml(tr("noClaims")) : escapeHtml(tr("checkedOf", { checked, total }))}</p>
+      ${h.error ? `<p class="cwhy" style="color:var(--v-false-fg)">${escapeHtml(String(h.error).slice(0, 200))}</p>` : ""}
+      ${claimRows ? `<p class="sum" style="margin-top:10px">${escapeHtml(tr("claimsList"))}:</p>${claimRows}` : ""}
+    </div>`;
+  return `<details class="h-item">
+    <summary aria-label="${escapeHtml(tr("video"))} ${escapeHtml(videoId)}">
+      <span class="st ${stCls}">${escapeHtml(stLabel)}</span>
+      <a class="vid" href="${link}" target="_blank" rel="noopener">${escapeHtml(videoId)} ↗</a>
+      <span>${pillRow(counts)}</span>
+      <span class="date">${escapeHtml(fmtDate(h.at || 0))}</span>
+    </summary>
+    ${body}
+  </details>`;
+}
+
+// расход за 30 дней: завершённые (done) прогоны и проверенные утверждения
+function renderUsage(entries) {
+  const since = Date.now() - 30 * DAY_MS;
+  let runs = 0, checked = 0;
+  entries.forEach(([, h]) => {
+    if (!h || h.status !== "done") return;
+    if (!h.at || h.at < since) return;
+    runs += 1;
+    checked += (h.summary && h.summary.checked) ||
+      ((countsOf(h)["правда"] || 0) + (countsOf(h)["ложно"] || 0) + (countsOf(h)["странно"] || 0));
+  });
+  document.getElementById("usage-stats").innerHTML =
+    `<div class="stat"><b>${runs}</b><span>${escapeHtml(tr("usageRuns"))}</span></div>` +
+    `<div class="stat"><b>${checked}</b><span>${escapeHtml(tr("usageChecked"))}</span></div>`;
+}
+
+function renderList(entries) {
+  const box = document.getElementById("history-list");
+  if (!entries.length) {
+    box.innerHTML = `<div class="empty"><b>${escapeHtml(tr("emptyTitle"))}</b>` +
+      `<span>${escapeHtml(tr("emptyHint"))}</span></div>`;
+    return;
+  }
+  box.innerHTML = entries.map(([videoId, h]) => historyItemHTML(videoId, h)).join("");
+}
+
+function renderAll(history) {
+  // свежие сверху; показываем не больше HISTORY_LIMIT записей
+  const entries = Object.entries(history || {})
+    .filter(([, h]) => h && typeof h === "object")
+    .sort((a, b) => (b[1].at || 0) - (a[1].at || 0))
+    .slice(0, HISTORY_LIMIT);
+  renderUsage(entries);
+  renderList(entries);
+}
+
+async function loadHistory() {
+  // при открытии файла напрямую chrome.storage недоступен — показываем пустое
+  // состояние без ошибок консоли
+  if (typeof chrome === "undefined" || !chrome.storage || !chrome.storage.local) {
+    renderAll({});
+    return;
+  }
+  try {
+    const st = await chrome.storage.local.get("vfc_history");
+    renderAll(st.vfc_history || {});
+  } catch {
+    renderAll({});
+  }
+}
+
+document.getElementById("lang-ru").addEventListener("click", () => { LANG = "ru"; localStorage.setItem("vfc_ui_lang", LANG); applyStaticLang(); loadHistory(); });
+document.getElementById("lang-en").addEventListener("click", () => { LANG = "en"; localStorage.setItem("vfc_ui_lang", LANG); applyStaticLang(); loadHistory(); });
+
+applyStaticLang();
+loadHistory();
+</script>
+</body>
+</html>

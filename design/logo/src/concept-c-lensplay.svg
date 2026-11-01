@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- C. «Лупа-плэй»: линза, в стекле — play-треугольник, галочка акцентом.
+       Риск по ресёрчу: доминирующая лупа = жанр поиска/антиплагиата, поэтому
+       треугольник в стекле крупный, а галочка вынесена. -->
+  <circle cx="56" cy="56" r="34" fill="none" stroke="#16181D" stroke-width="12"/>
+  <line x1="81" y1="81" x2="102" y2="102" stroke="#16181D" stroke-width="12" stroke-linecap="round"/>
+  <path d="M50 42 L72 56 L50 70 Z" fill="#2F6FED" stroke="#2F6FED" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M86 26 L93 33 L106 17" fill="none" stroke="#2F6FED" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

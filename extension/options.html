@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<!-- video-factcheck: страница настроек расширения (options).
+     Решение №10 из. Зарегистрирована в manifest.json
+     через options_ui (open_in_tab). Язык проверки пишет тот же ключ
+     vfc_verdict_lang, что и селект в поповере панели (content.js) — настройки
+     синхронизированы через chrome.storage. Поле API-адреса видно только в
+     дев-режиме (ключ vfc_dev): по умолчанию прод-адрес не показывается и не
+     меняется. Внешних ресурсов нет (no remote code). -->
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Факт-чек YouTube — настройки</title>
+<link rel="stylesheet" href="pages.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="page-head">
+    <!-- знак бренда «кадр с галочкой» (design/logo, вариант D) -->
+    <svg class="sign" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+      <rect x="4.1" y="6.4" width="15.8" height="11.2" rx="3" fill="none" stroke="#2F6FED" stroke-width="2.6"/>
+      <path d="M8.6 12 L10.9 14.3 L15.7 8.6" fill="none" stroke="#2F6FED" stroke-width="2.6"
+        stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+    <h1 data-i18n="title">Настройки</h1>
+    <div class="lang-switch" role="group" aria-label="Language / Язык">
+      <button type="button" id="lang-ru" aria-pressed="true">RU</button>
+      <button type="button" id="lang-en" aria-pressed="false">EN</button>
+    </div>
+  </header>
+  <p class="page-sub" data-i18n="sub">Факт-чек YouTube · video-factcheck</p>
+
+  <main>
+    <section class="card">
+      <!-- язык проверки: тот же ключ vfc_verdict_lang, что селект в поповере -->
+      <div class="field">
+        <label for="opt-vlang" data-i18n="vlangLabel">Язык проверки</label>
+        <select id="opt-vlang">
+          <option value="auto" data-i18n="vlangAuto">Как в браузере</option>
+          <option value="ru">Русский</option>
+          <option value="en">English</option>
+        </select>
+        <p class="hint" data-i18n="vlangHint">Язык обоснований вердиктов; применяется к новым проверкам. Тот же выбор — в поповере панели на YouTube.</p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="devTitle">Разработчику</h2>
+      <div class="field">
+        <div class="check-row">
+          <input type="checkbox" id="opt-dev">
+          <label for="opt-dev" style="margin:0" data-i18n="devLabel">Дев-режим (моки кабинета и свой API-адрес)</label>
+        </div>
+        <p class="hint" data-i18n="devHint">Для локальной разработки. Влияет на панель на YouTube и показывает поле API-адреса ниже.</p>
+      </div>
+      <!-- прод-адрес по умолчанию не показывается и не меняется (решение №10) -->
+      <div class="field" id="api-field" hidden>
+        <label for="opt-api" data-i18n="apiLabel">API-адрес</label>
+        <input type="url" id="opt-api" placeholder="http://127.0.0.1:8765" spellcheck="false">
+        <p class="hint" data-i18n="apiHint">Адрес сервера проверки. Пустое значение — адрес по умолчанию сборки.</p>
+        <div style="display:flex; align-items:center; gap:12px; margin-top:10px">
+          <button type="button" class="btn" id="btn-api-save" data-i18n="apiSave">Сохранить адрес</button>
+          <span class="saved" id="api-saved" role="status" data-i18n="saved">Сохранено</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2 data-i18n="aboutTitle">О расширении</h2>
+      <p data-i18n="aboutLead">Факт-чек YouTube · video-factcheck — проверяет утверждения из видео параллельно просмотру и показывает вердикты с источниками.</p>
+      <p><span data-i18n="versionLabel">Версия сборки:</span> <span class="ver" id="app-version">—</span></p>
+      <p>
+        <span data-i18n="privacyLabel">Политика конфиденциальности:</span>
+        <!-- Плейсхолдер до публикации (решение №11: GitHub Pages профильного репо) -->
+        <a href="https://vonavikon.github.io/vonavikon/privacy" target="_blank" rel="noopener" data-i18n="privacyLink">vonavikon.github.io/vonavikon/privacy</a>
+      </p>
+    </section>
+  </main>
+</div>
+
+<script>
+"use strict";
+// Словарь RU/EN страницы настроек.
+const I18N = {
+  ru: {
+    title: "Настройки",
+    sub: "Факт-чек YouTube · video-factcheck",
+    vlangLabel: "Язык проверки",
+    vlangAuto: "Как в браузере",
+    vlangHint: "Язык обоснований вердиктов; применяется к новым проверкам. Тот же выбор — в поповере панели на YouTube.",
+    devTitle: "Разработчику",
+    devLabel: "Дев-режим (моки кабинета и свой API-адрес)",
+    devHint: "Для локальной разработки. Влияет на панель на YouTube и показывает поле API-адреса ниже.",
+    apiLabel: "API-адрес",
+    apiHint: "Адрес сервера проверки. Пустое значение — адрес по умолчанию сборки.",
+    apiSave: "Сохранить адрес",
+    saved: "Сохранено",
+    aboutTitle: "О расширении",
+    aboutLead: "Факт-чек YouTube · video-factcheck — проверяет утверждения из видео параллельно просмотру и показывает вердикты с источниками.",
+    versionLabel: "Версия сборки:",
+    privacyLabel: "Политика конфиденциальности:",
+    privacyLink: "vonavikon.github.io/vonavikon/privacy",
+  },
+  en: {
+    title: "Settings",
+    sub: "YouTube Fact-Check · video-factcheck",
+    vlangLabel: "Check language",
+    vlangAuto: "Follow browser",
+    vlangHint: "Language of verdict explanations; applies to new checks. The same choice is in the panel popover on YouTube.",
+    devTitle: "For the developer",
+    devLabel: "Dev mode (account mocks and a custom API address)",
+    devHint: "For local development. Affects the panel on YouTube and reveals the API address field below.",
+    apiLabel: "API address",
+    apiHint: "Fact-check server address. Empty value — the build default.",
+    apiSave: "Save address",
+    saved: "Saved",
+    aboutTitle: "About",
+    aboutLead: "YouTube Fact-Check · video-factcheck — checks claims from videos while you watch and shows verdicts with sources.",
+    versionLabel: "Build version:",
+    privacyLabel: "Privacy policy:",
+    privacyLink: "vonavikon.github.io/vonavikon/privacy",
+  },
+};
+
+function detectLang() {
+  const saved = (localStorage.getItem("vfc_ui_lang") || "").toLowerCase();
+  if (saved === "ru" || saved === "en") return saved;
+  const nav = (navigator.language || "").toLowerCase();
+  return nav.startsWith("ru") ? "ru" : nav.startsWith("en") ? "en" : "ru";
+}
+
+function applyLang(lang) {
+  const L = I18N[lang] || I18N.ru;
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-i18n]").forEach((el) => {
+    const v = L[el.dataset.i18n];
+    if (v !== undefined) el.textContent = v;
+  });
+  document.getElementById("lang-ru").setAttribute("aria-pressed", String(lang === "ru"));
+  document.getElementById("lang-en").setAttribute("aria-pressed", String(lang === "en"));
+  document.getElementById("api-saved").classList.remove("show");
+}
+
+const $ = (id) => document.getElementById(id);
+const storageAvailable = typeof chrome !== "undefined" && chrome.storage && chrome.storage.local;
+
+document.getElementById("lang-ru").addEventListener("click", () => { localStorage.setItem("vfc_ui_lang", "ru"); applyLang("ru"); });
+document.getElementById("lang-en").addEventListener("click", () => { localStorage.setItem("vfc_ui_lang", "en"); applyLang("en"); });
+applyLang(detectLang());
+
+// версия сборки читается из манифеста расширения
+try {
+  if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getManifest) {
+    $("app-version").textContent = chrome.runtime.getManifest().version || "—";
+  }
+} catch { /* файл открыт напрямую — остаётся прочерк */ }
+
+// — язык проверки: ключ vfc_verdict_lang, общий с селектом в поповере —
+$("opt-vlang").addEventListener("change", async () => {
+  if (!storageAvailable) return;
+  try { await chrome.storage.local.set({ vfc_verdict_lang: $("opt-vlang").value }); } catch {}
+});
+
+// — дев-режим: ключ vfc_dev управляет и панелью (PUBLIC_BUILD), и полем API —
+$("opt-dev").addEventListener("change", async () => {
+  const on = $("opt-dev").checked;
+  $("api-field").hidden = !on;   // по умолчанию прод-адрес не показывается и не меняется
+  if (!storageAvailable) return;
+  try { await chrome.storage.local.set({ vfc_dev: on }); } catch {}
+});
+
+// — API-адрес: ключ vfc_api_base; пустое значение возвращает дефолт сборки —
+$("btn-api-save").addEventListener("click", async () => {
+  if (!storageAvailable) return;
+  const val = $("opt-api").value.trim();
+  try {
+    if (val) await chrome.storage.local.set({ vfc_api_base: val });
+    else await chrome.storage.local.remove("vfc_api_base");
+    $("api-saved").classList.add("show");
+    setTimeout(() => $("api-saved").classList.remove("show"), 2000);
+  } catch {}
+});
+
+// — начальные значения из chrome.storage (дефолты совпадают с content.js) —
+(async () => {
+  if (!storageAvailable) return;
+  try {
+    const st = await chrome.storage.local.get(["vfc_verdict_lang", "vfc_dev", "vfc_api_base"]);
+    $("opt-vlang").value = st.vfc_verdict_lang === "ru" || st.vfc_verdict_lang === "en"
+      ? st.vfc_verdict_lang : "auto";
+    const dev = st.vfc_dev === true;
+    $("opt-dev").checked = dev;
+    $("api-field").hidden = !dev;
+    if (st.vfc_api_base) $("opt-api").value = st.vfc_api_base;
+  } catch {}
+})();
+</script>
+</body>
+</html>
