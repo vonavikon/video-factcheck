@@ -10,6 +10,7 @@ A Chrome extension (MV3) that fact-checks YouTube videos while you watch. It rea
 "Unclear" is a working verdict, not a cop-out: it marks claims where two web-search passes disagreed or the sources were not enough. The science layer is deliberately restrained: a paper can only move a verdict if it is directly on topic and recent enough, and it can never say "false" — at most it downgrades "true" to "unclear".
 
 ![How it works: a fact-check panel over YouTube, claim cards with verdicts and timestamps, clicking a timestamp seeks the video, each verdict has a source with a quote and a weight](assets/concept.gif)
+Video version (16 s, silent): [how-it-works.mp4](assets/how-it-works.mp4)
 
 ## How it works
 

@@ -10,6 +10,7 @@ Una extensión de Chrome (MV3) que verifica las afirmaciones de videos de YouTub
 «Dudoso» es un veredicto de pleno derecho, no un comodín: marca afirmaciones donde dos pasadas de búsqueda web discreparon o donde las fuentes no alcanzaron. La capa científica es deliberadamente prudente: un artículo solo mueve un veredicto si trata el tema directamente y es suficientemente reciente, y nunca dicta «falso» — como máximo rebaja «verdadero» a «dudoso».
 
 ![Cómo funciona: panel de verificación sobre YouTube, tarjetas de afirmaciones con veredictos y marcas de tiempo, un clic en la marca salta el video, cada veredicto lleva fuente con cita y peso](assets/concept.gif)
+Versión en vídeo (16 s, sin sonido): [how-it-works.mp4](assets/how-it-works.mp4)
 
 ## Cómo funciona
 
