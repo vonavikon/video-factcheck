@@ -1,4 +1,4 @@
-"""Сценарии хранения и сервера: lifecycle прогона, origin-защита."""
+"""Storage and server scenarios: run lifecycle, origin protection."""
 from videofactcheck import config, server, store
 
 
@@ -11,7 +11,7 @@ def test_run_lifecycle(tmp_path, monkeypatch):
 
 
 def test_error_run_surfaces_message(tmp_path, monkeypatch):
-    """CR-SRV-01: упавший прогон отдаёт статусу понятную ошибку, а не молчание."""
+    """CR-SRV-01: a failed run surfaces a comprehensible error in the status, not silence."""
     monkeypatch.setattr(config, "DB_PATH", tmp_path / "t.db")
     run_id = store.new_run("", "url")
     store.update_run(run_id, status="error", error="нет субтитров")
@@ -25,7 +25,7 @@ def test_unknown_run_reports_error():
 
 
 def test_origin_allowed():
-    """AD-SRV-01: чужой сайт не может запускать прогоны через браузер."""
+    """AD-SRV-01: a foreign site cannot start runs through the browser."""
     oa = server._origin_allowed
     assert oa("https://www.youtube.com")
     assert oa("https://youtube.com/")

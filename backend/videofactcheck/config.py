@@ -1,10 +1,10 @@
-"""Конфигурация: ключи и параметры из окружения / .env.
+"""Configuration: keys and settings from the environment / .env.
 
-Ключи НЕ хранятся в репо. Имена переменных:
-  VFC_LLM_BASE_URL   — OpenAI-совместимый эндпоинт (дефолт bothub)
-  VFC_LLM_KEY        — API-ключ LLM-провайдера
-  VFC_LLM_MODEL      — модель для экстракции/вердиктов (дефолт deepseek-v4-flash)
-  VFC_SEARCH_BACKEND — cse | serper (дефолт cse)
+Keys are NOT stored in the repo. Variable names:
+  VFC_LLM_BASE_URL   — OpenAI-compatible endpoint (default bothub)
+  VFC_LLM_KEY        — LLM provider API key
+  VFC_LLM_MODEL      — model for extraction/verdicts (default deepseek-v4-flash)
+  VFC_SEARCH_BACKEND — cse | serper (default cse)
   VFC_CSE_KEY / VFC_CSE_CX  — Google Programmable Search
   VFC_SERPER_KEY
 """

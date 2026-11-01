@@ -1,4 +1,4 @@
-"""Сценарии этапов 1 и 3: дедуп утверждений, разворачивание bing-редиректов, фильтр мусора."""
+"""Scenarios for stages 1 and 3: claim dedup, unwrapping bing redirects, junk filtering."""
 import base64
 
 from videofactcheck import claims as cl
@@ -16,7 +16,7 @@ def test_unwrap_bing_valid():
 
 def test_unwrap_bing_malformed_falls_back():
     href = "https://www.bing.com/ck/a?!&&p=abc&u=a1###broken###&ntb=1"
-    assert se._unwrap_bing(href) == href  # битый base64 → исходная ссылка, не крэш
+    assert se._unwrap_bing(href) == href  # broken base64 → the original link, no crash
 
 
 def test_unwrap_bing_plain_passthrough():
@@ -28,10 +28,10 @@ def test_junk_domains_filtered():
         {"title": "a", "url": "https://youtube.com/watch", "snippet": ""},
         {"title": "b", "url": "https://vkvideo.ru/x", "snippet": ""},
         {"title": "c", "url": "https://reuters.com/article", "snippet": ""},
-        {"title": "d", "url": "https://reuters.com/another", "snippet": ""},  # дубль домена
+        {"title": "d", "url": "https://reuters.com/another", "snippet": ""},  # duplicate domain
     ]
     out = se.search_web.__wrapped__ if hasattr(se.search_web, "__wrapped__") else None
-    # идём через внутренний фильтр: вызовем логику напрямую
+    # go through the internal filter: call the logic directly
     filtered, seen = [], set()
     for r in raw:
         dom = se._domain(r["url"])
@@ -44,7 +44,7 @@ def test_junk_domains_filtered():
 
 def test_claim_hash_dedup():
     h1 = cl.claim_hash("В 2020 году произошло событие X!")
-    h2 = cl.claim_hash("в 2020 году произошло событие  x")  # регистр/пунктуация/пробелы
+    h2 = cl.claim_hash("в 2020 году произошло событие  x")  # case/punctuation/whitespace
     h3 = cl.claim_hash("Совсем другое утверждение")
     assert h1 == h2 and h1 != h3
 

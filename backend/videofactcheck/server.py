@@ -1,13 +1,13 @@
-"""HTTP-сервер для расширения: FastAPI на localhost.
+"""HTTP server for the extension: FastAPI on localhost.
 
-Эндпоинты:
+Endpoints:
   GET  /health
   POST /api/check  {url}          → {run_id}
-  GET  /api/run/{run_id}          → статус + вердикты (поллинг из расширения)
+  GET  /api/run/{run_id}          → status + verdicts (polled by the extension)
 
-Защита от чужих сайтов (сценарий AD-SRV-01): CORS открыт только для страниц
-YouTube и chrome-extension — посторонний сайт не может запустить прогон
-из браузера пользователя. Сервер слушать только на 127.0.0.1.
+Protection against foreign sites (scenario AD-SRV-01): CORS is open only to
+YouTube pages and chrome-extension — a third-party site cannot start a run
+from the user's browser. The server must listen on 127.0.0.1 only.
 """
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -22,8 +22,8 @@ app = FastAPI(title="videofactcheck")
 
 @app.on_event("startup")
 def cleanup_orphans() -> None:
-    """Прогоны, застрявшие в running после рестарта сервера, помечаем ошибкой —
-    панель не должна вечно ждать мёртвый прогон (сценарий SRV-06)."""
+    """Runs stuck in running after a server restart are marked as errored —
+    the panel must not wait forever for a dead run (scenario SRV-06)."""
     from . import store
     with store.connect() as con:
         con.execute(
@@ -43,18 +43,18 @@ class CheckReq(BaseModel):
     url: str
     transcript: dict | None = None
     install_id: str = ""
-    # язык обоснований вердиктов (настройка «язык проверки» в расширении);
-    # None/мусор → язык транскрипта
+    # language of verdict justifications (the extension's "language" setting);
+    # None/garbage → the transcript language
     verdict_lang: str | None = None
 
 
-# ── Security: API-токен + rate-limit (без этого публичный API = чужие деньги) ──
+# ── Security: API token + rate limit (without this a public API means someone else's money) ──
 import time as _time
 from collections import defaultdict
 
 _RATE: dict[str, list] = defaultdict(list)  # ip → [timestamps]
-_RATE_LIMIT = 10       # запросов
-_RATE_WINDOW = 60      # за 60 секунд
+_RATE_LIMIT = 10       # requests
+_RATE_WINDOW = 60      # per 60 seconds
 
 
 def _rate_limited(request: Request) -> bool:
@@ -68,15 +68,15 @@ def _rate_limited(request: Request) -> bool:
 
 
 def _authed(request: Request) -> bool:
-    """API-токен в заголовке X-API-Key; без него — rate-limited аноним."""
+    """API token in the X-API-Key header; without it — a rate-limited anonymous caller."""
     import os
     expected = os.environ.get("VFC_API_KEY", "").strip()
     if not expected:
         import sys
-        # fail-closed: на не-localhost без ключа — отказ (audit #3)
+        # fail-closed: non-localhost without a key — denied (audit #3)
         host = request.client.host if request.client else ""
         if host.startswith("127.") or host == "::1":
-            return True  # локальная разработка
+            return True  # local development
         print(f"[server:SEC] VFC_API_KEY не задан, запрос с {host} отклонён", file=sys.stderr)
         return False
     import hmac
@@ -87,8 +87,8 @@ def _authed(request: Request) -> bool:
 
 class TopupReq(BaseModel):
     install_id: str
-    credits: int  # клиентский транскрипт (IP пользователя):
-    # расширение читает timed_text со страницы YouTube, сервер не ходит за сабами
+    credits: int  # client transcript (the user's IP):
+    # the extension reads timed_text from the YouTube page, the server does not fetch subs
 
 
 @app.get("/health")
@@ -110,7 +110,7 @@ def check(req: CheckReq, request: Request) -> dict:
                  and t.get("video_id")
                  and all(isinstance(c.get("text", ""), str) and len(c.get("text", "")) <= 500
                          for c in t["cues"][:50])
-                 and len(str(t)) <= 500_000)  # СЕК-4: лимиты клиентского транскрипта
+                 and len(str(t)) <= 500_000)  # СЕК-4: client transcript limits
     vlang = req.verdict_lang if req.verdict_lang in ("ru", "en") else None
     return pipeline.start_run(req.url, transcript=t if valid else None,
                               install_id=req.install_id, verdict_lang=vlang)
@@ -123,7 +123,7 @@ def account(install_id: str) -> dict:
 
 @app.post("/api/topup")
 def topup(req: TopupReq, request: Request) -> dict:
-    # мокап под env-флагом (СЕК-2): боевая покупка — webhook платёжки с подписью
+    # mockup behind an env flag (СЕК-2): the production purchase flow is a signed payment webhook
     import os
     origin = request.headers.get("origin", "")
     if origin and not _origin_allowed(origin):
@@ -138,7 +138,7 @@ def run(run_id: str, request: Request = None, install_id: str = "") -> dict:
     if request and not _authed(request):
         return {"error": "unauthorized"}
     st = pipeline.get_status(run_id)
-    # IDOR-защита: прогон виден только автору запроса
+    # IDOR protection: a run is visible only to the requester who owns it
     if st.get("install_id") and install_id and st["install_id"] != install_id:
         return {"error": "not your run"}
     return st

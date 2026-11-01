@@ -1,11 +1,11 @@
-"""Регрессии сек-фиксов аудита 2026-10-28."""
+"""Regression tests for the security fixes of the 2026-10-28 audit."""
 import os
 from videofactcheck import verdict as ve
 from videofactcheck import server
 
 
 def test_safe_url_blocks_javascript_scheme():
-    """СЕК-1: javascript:-URL от LLM не становится ссылкой-источником."""
+    """СЕК-1: a javascript: URL from the LLM never becomes a source link."""
     assert ve._safe_url("javascript:alert(1)//x") is None
     assert ve._safe_url("data:text/html,<script>") is None
     assert ve._safe_url('https://x"><img src=x onerror=alert(1>') is None
@@ -25,14 +25,14 @@ def test_votes_skip_unsafe_urls(monkeypatch):
 
 
 def test_topup_disabled_without_env(monkeypatch):
-    """СЕК-2: мокап-топап закрыт без VFC_ALLOW_MOCK_TOPUP=1."""
+    """СЕК-2: the mockup top-up is closed without VFC_ALLOW_MOCK_TOPUP=1."""
     from fastapi.testclient import TestClient
     monkeypatch.delenv("VFC_ALLOW_MOCK_TOPUP", raising=False)
     client = TestClient(server.app)
     r = client.post("/api/topup", json={"install_id": "sec-test", "credits": 100},
                     headers={"Origin": "https://www.youtube.com"})
     assert r.json().get("error") and "недоступна" in r.json()["error"]
-    # и включённый флаг работает
+    # and the enabled flag works
     monkeypatch.setenv("VFC_ALLOW_MOCK_TOPUP", "1")
     from videofactcheck import config, store
     monkeypatch.setattr(config, "DB_PATH", __import__("pathlib").Path(
@@ -43,11 +43,11 @@ def test_topup_disabled_without_env(monkeypatch):
 
 
 def test_anonymous_budget_is_free_daily(monkeypatch):
-    """СЕК-3: без install_id бюджет = дневная квота, не безлимит."""
+    """СЕК-3: without install_id the budget is the daily quota, not unlimited."""
     from videofactcheck import config, store
     monkeypatch.setattr(config, "DB_PATH", __import__("pathlib").Path(
         __import__("tempfile").mkdtemp()) / "a.db")
     monkeypatch.delenv("VFC_DEV_UNLIMITED", raising=False)
-    # логика внутри _run; проверяем компонент: budget без install_id не существует,
-    # поэтому проверяем, что VFC_DEV_UNLIMITED не стоит по умолчанию
+    # the logic lives inside _run; we test the component: budget without install_id
+    # does not exist, so we check that VFC_DEV_UNLIMITED is not set by default
     assert os.environ.get("VFC_DEV_UNLIMITED", "") != "1"

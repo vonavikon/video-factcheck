@@ -1,1 +1,1 @@
-"""evals —, реализация после фиксации решений."""
+"""evals — implementation pending until decisions are finalized."""

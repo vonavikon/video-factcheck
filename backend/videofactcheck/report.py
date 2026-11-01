@@ -1,1 +1,1 @@
-"""report —, реализация после фиксации решений."""
+"""report — implementation pending until decisions are finalized."""

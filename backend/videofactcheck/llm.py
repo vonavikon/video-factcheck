@@ -1,7 +1,7 @@
-"""Тонкая абстракция LLM-провайдера (решение В9): OpenAI-совместимый чат.
+"""A thin LLM provider abstraction (decision В9): OpenAI-compatible chat.
 
-Работает с bothub (deepseek-v4-flash) и любым OpenAI-совместимым эндпоинтом
-(OpenRouter, Selectel) сменой VFC_LLM_BASE_URL/KEY/MODEL без правки кода.
+Works with bothub (deepseek-v4-flash) and any OpenAI-compatible endpoint
+(OpenRouter, Selectel) by changing VFC_LLM_BASE_URL/KEY/MODEL — no code changes needed.
 """
 import json
 import re
@@ -21,11 +21,11 @@ def chat(
     temperature: float = 0.2,
     retries: int = 2,
 ) -> str:
-    """Один вызов chat/completions. Возвращает content (str).
+    """A single chat/completions call. Returns content (str).
 
-    model=None → VFC_LLM_MODEL. deepseek-v4-flash — reasoning-модель: при малом
-    max_tokens возвращает content=null (урок из video-digest-бота), поэтому
-    дефолт 8000 и ретраи с удвоением при пустом content.
+    model=None → VFC_LLM_MODEL. deepseek-v4-flash is a reasoning model: with a small
+    max_tokens it returns content=null (a lesson from the video-digest bot), hence
+    the 8000 default and retries with doubling on empty content.
     """
     body: dict = {
         "model": model or config.LLM_MODEL,
@@ -54,14 +54,14 @@ def chat(
                 continue
             try:
                 data = resp.json()
-            except Exception as e:  # битый JSON-ответ — тоже ретрай (ревью P1-3)
+            except Exception as e:  # broken JSON response — also retried (review P1-3)
                 last_err = f"битый JSON ответа: {e}"
                 from . import tracing
                 tracing.log_generation(name="llm", model=body["model"], prompt_tail=messages,
                                        output=None, error=last_err)
                 time.sleep(2 * (attempt + 1))
                 continue
-        except httpx.TransportError as e:  # ConnectError/ReadTimeout — ретрай, не потеря батча (ревью P1-3)
+        except httpx.TransportError as e:  # ConnectError/ReadTimeout — retried so no batch is lost (review P1-3)
             last_err = f"транспорт: {type(e).__name__}: {e}"
             from . import tracing
             tracing.log_generation(name="llm", model=body["model"], prompt_tail=messages,
@@ -75,7 +75,7 @@ def chat(
             tracing.log_generation(name="llm", model=body["model"], prompt_tail=messages,
                                    output=content, usage=data.get("usage") or {})
             return content
-        # content=null при исчерпании max_tokens reasoning-моделью
+        # content=null when a reasoning model exhausts max_tokens
         last_err = f"пустой content (finish={choice.get('finish_reason')}), usage={data.get('usage')}"
         body["max_tokens"] = min(body["max_tokens"] * 2, 16000)
         time.sleep(2)
@@ -86,7 +86,7 @@ def chat(
 
 
 def parse_json(text: str) -> dict:
-    """JSON из ответа модели: срежет ```-заборы и найдёт первый объект."""
+    """JSON from a model response: strips ``` fences and finds the first object."""
     text = text.strip()
     m = re.search(r"```(?:json)?\s*(.+?)\s*```", text, re.S)
     if m:

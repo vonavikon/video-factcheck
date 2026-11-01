@@ -1,5 +1,5 @@
-"""Сценарии этапа 0: парсер VTT, сегменты, защита от плейлистов,
-различение «нет сабов» и сбоя скачивания (429)."""
+"""Stage 0 scenarios: the VTT parser, segments, playlist protection,
+telling "no subs" apart from a download failure (429)."""
 import pytest
 
 from videofactcheck import transcript as tr
@@ -55,7 +55,7 @@ def test_segments_gap_split():
     cues = [
         {"start": 0.0, "end": 2.0, "text": "a"},
         {"start": 1.9, "end": 4.0, "text": "b"},
-        {"start": 30.0, "end": 32.0, "text": "c"},  # разрыв > max_gap
+        {"start": 30.0, "end": 32.0, "text": "c"},  # gap > max_gap
     ]
     segs = tr.to_segments(cues)
     assert len(segs) == 2
@@ -63,7 +63,7 @@ def test_segments_gap_split():
 
 
 def test_playlist_guard(monkeypatch):
-    """Сценарий CV-TR-01: yt-dlp вернул несколько записей (плейлист) — честный отказ."""
+    """Scenario CV-TR-01: yt-dlp returned several entries (a playlist) — an honest refusal."""
     class FakeProc:
         returncode = 0
         stdout = "id1|||t1|||10\nid2|||t2|||20\n"
@@ -85,18 +85,18 @@ class _Proc:
 
 
 def _fake_ytdlp(monkeypatch, results):
-    """Подменяет subprocess.run: результаты выдаются по очереди
-    (метаданные, потом попытки скачать ручные и автосабы)."""
+    """Replaces subprocess.run: results are returned in sequence
+    (metadata, then the manual and auto-subs download attempts)."""
     it = iter(results)
     monkeypatch.setattr(tr.subprocess, "run", lambda *a, **k: next(it))
 
 
 def test_no_subs_when_ytdlp_clean(tmp_path, monkeypatch):
-    """yt-dlp отработал чисто, но файлов сабов не появилось — «нет субтитров»."""
+    """yt-dlp exited cleanly but no sub files appeared — "no subtitles"."""
     monkeypatch.setattr(tr.config, "DATA_DIR", tmp_path)
     _fake_ytdlp(monkeypatch, [
-        _Proc(stdout="vid1|||title|||10\n"),  # метаданные
-        _Proc(), _Proc(),  # ручные и автосабы: exit 0, файлов нет
+        _Proc(stdout="vid1|||title|||10\n"),  # metadata
+        _Proc(), _Proc(),  # manual and auto subs: exit 0, no files
     ])
     with pytest.raises(RuntimeError) as ei:
         tr.fetch("https://youtube.com/watch?v=vid1")
@@ -106,14 +106,14 @@ def test_no_subs_when_ytdlp_clean(tmp_path, monkeypatch):
 
 
 def test_download_error_on_429(tmp_path, monkeypatch):
-    """Сценарий бага 2026-10-28: timed_text отдаёт 429 с IP датацентра.
-    Это сбой скачивания, а не «на видео нет субтитров» — и в сообщении
-    есть подсказка про клиентский путь (кнопка на странице видео)."""
+    """Bug scenario 2026-10-28: timed_text returns 429 from a datacenter IP.
+    This is a download failure, not "the video has no subtitles" — and the
+    message hints at the client path (the button on the video page)."""
     monkeypatch.setattr(tr.config, "DATA_DIR", tmp_path)
     _fake_ytdlp(monkeypatch, [
-        _Proc(stdout="vid1|||title|||10\n"),  # метаданные скачались
-        _Proc(),  # ручные сабы: чисто, файлов нет
-        _Proc(returncode=1, stderr="HTTP Error 429: Too Many Requests"),  # автосабы
+        _Proc(stdout="vid1|||title|||10\n"),  # metadata downloaded
+        _Proc(),  # manual subs: clean, no files
+        _Proc(returncode=1, stderr="HTTP Error 429: Too Many Requests"),  # auto subs
     ])
     with pytest.raises(RuntimeError) as ei:
         tr.fetch("https://youtube.com/watch?v=vid1")
@@ -124,7 +124,7 @@ def test_download_error_on_429(tmp_path, monkeypatch):
 
 
 def test_download_error_on_ytdlp_exit(tmp_path, monkeypatch):
-    """Ненулевой exit yt-dlp без 429 в stderr — тоже сбой скачивания, не «нет сабов»."""
+    """A non-zero yt-dlp exit without a 429 in stderr is also a download failure, not "no subs"."""
     monkeypatch.setattr(tr.config, "DATA_DIR", tmp_path)
     broken = _Proc(returncode=2, stderr="yt-dlp crashed")
     _fake_ytdlp(monkeypatch, [
@@ -136,8 +136,8 @@ def test_download_error_on_ytdlp_exit(tmp_path, monkeypatch):
 
 
 def test_client_transcript_used_as_is(tmp_path, monkeypatch):
-    """Задача 2: клиентский транскрипт не затирается — tr.fetch не вызывается,
-    в хранилище лежат именно клиентские сабы."""
+    """Task 2: a client transcript is not overwritten — tr.fetch is never called,
+    exactly the client subs end up in storage."""
     from videofactcheck import claims as claims_mod, pipeline, store
 
     monkeypatch.setattr(tr.config, "DATA_DIR", tmp_path)

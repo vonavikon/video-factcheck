@@ -1,4 +1,4 @@
-"""CLI: запуск сервера для расширения — `vfc serve`. Проверка одного видео — `vfc check <url>`."""
+"""CLI: start the extension server — `vfc serve`. Check a single video — `vfc check <url>`."""
 import argparse
 import sys
 

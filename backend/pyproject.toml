@@ -1,7 +1,7 @@
 [project]
 name = "videofactcheck"
 version = "0.0.1"
-description = "Пайплайн факт-чека YouTube-видео: транскрипт → утверждения → ClaimReview → поиск → вердикт-голосование. Проверяется на живых YouTube-видео."
+description = "Fact-check pipeline for YouTube videos: transcript → claims → ClaimReview → web search → verdict voting; NLI plausibility layer on Europe PMC/OpenAlex."
 requires-python = ">=3.12"
 dependencies = [
     "yt-dlp",

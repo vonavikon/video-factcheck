@@ -1,20 +1,20 @@
-"""Реестр источников верификации с весами (общий датасет системы).
+"""Registry of verification sources with weights (the system's shared dataset).
 
-Исследование и живая валидация: 2026-10-29, два субагента (ландшафт + проба API).
-Математика весов —: свидетельство входит в байесовский
-аккумулятор как Δlogit = k_tier * τ_source * stance, τ бумаг зависит от цитирований.
+Research and live validation: 2026-10-29, two subagents (landscape survey + API probing).
+Weight math: a piece of evidence enters the bayesian
+accumulator as Δlogit = k_tier * τ_source * stance; τ for papers depends on citations.
 
-Эшелоны (k_tier): прямые факт-чеки людей 1.0; статистика по точной цифре 0.9;
-прямое подтверждение надёжным источником через веб 0.8; научная статья
-(косвенное) 0.7; энциклопедика 0.6; новость без статуса 0.4.
-Статусы валидации: ok (живой запрос 2026-10-29), key (работает/нужно просить
-ключ), paid (платный контракт), rejected (провалил валидацию).
+Tiers (k_tier): direct human fact-checks 1.0; statistics for an exact figure 0.9;
+direct confirmation by a reliable source via web 0.8; a scientific paper
+(indirect) 0.7; encyclopedic 0.6; unvetted news 0.4.
+Validation statuses: ok (live request 2026-10-29), key (works / need to request
+a key), paid (paid contract), rejected (failed validation).
 """
 
-# τ_base — доверие источника; для научных баз это доверие МЕТАДАННЫХ,
-# доверие конкретной бумаги считается отдельно: τ_paper = f(цитирования, журнал).
+# τ_base is the source's trust; for scientific databases this is the trust in METADATA,
+# a specific paper's trust is computed separately: τ_paper = f(citations, journal).
 SOURCES = {
-    # ── эшелон 1: факт-чеки людей (прямые) ────────────────────────────────
+    # ── tier 1: human fact-checks (direct) ────────────────────────────────
     "claimreview_google": {
         "name": "Google Fact Check Tools (ClaimReview)", "tier": "human_factcheck",
         "k_tier": 1.0, "tau": 0.9, "status": "ok",
@@ -26,7 +26,7 @@ SOURCES = {
         "k_tier": 1.0, "tau": 0.9, "status": "ok",
         "api": "github.com/MartinoMensio/claimreview-data", "access": "free-no-key",
         "limits": "ежедневные релизы, офлайн", "notes": "замена живых квот Google"},
-    # ── эшелон 2: научная база (косвенные свидетельства) ──────────────────
+    # ── tier 2: scientific databases (indirect evidence) ──────────────────
     "europe_pmc": {
         "name": "Europe PMC", "tier": "scientific", "k_tier": 0.7, "status": "ok",
         "tau_paper": "citedByCount", "access": "free-no-key",
@@ -47,7 +47,7 @@ SOURCES = {
         "notes": "обязательный mailto-параметр в запросах"},
     "retraction_watch": {
         "name": "Retraction Watch (через Crossref)", "tier": "scientific_meta",
-        "k_tier": 0.0,  # не свидетельство, а ВЕТОО: отозванная бумага обнуляет вес
+        "k_tier": 0.0,  # not evidence but a VETO: a retracted paper zeroes the weight
         "status": "ok", "access": "free-no-key",
         "api": "gitlab.com/crossref/retraction-watch-data (CSV 68 МБ)",
         "notes": "флаг ретракции → τ_paper := 0.05 и пометка в вердикте"},
@@ -60,7 +60,7 @@ SOURCES = {
         "name": "arXiv API", "tier": "scientific", "k_tier": 0.7, "status": "ok",
         "access": "free-no-key", "limits": "1 req/3s",
         "meta": ["published"], "notes": "препринты: τ × 0.8 (нет рецензии)"},
-    # ── эшелон 3: энциклопедика и факты ───────────────────────────────────
+    # ── tier 3: encyclopedic and reference facts ──────────────────────────
     "wikipedia": {
         "name": "Wikipedia (ru/en)", "tier": "encyclopedic", "k_tier": 0.6,
         "status": "ok", "tau": 0.7, "access": "free-no-key",
@@ -69,7 +69,7 @@ SOURCES = {
         "name": "Wikidata SPARQL", "tier": "encyclopedic", "k_tier": 0.6,
         "status": "ok", "tau": 0.7, "access": "free-no-key",
         "api": "query.wikidata.org/sparql", "limits": "60с таймаут, 5 параллельных"},
-    # ── эшелон 4: статистика (точные цифры) ───────────────────────────────
+    # ── tier 4: statistics (exact figures) ────────────────────────────────
     "worldbank": {
         "name": "World Bank API", "tier": "statistical", "k_tier": 0.9,
         "status": "ok", "tau": 1.0, "access": "free-no-key",
@@ -84,7 +84,7 @@ SOURCES = {
     "eurostat": {
         "name": "Eurostat API", "tier": "statistical", "k_tier": 0.9,
         "status": "ok", "tau": 0.95, "access": "free-no-key"},
-    # ── эшелон 5: веб-поиск (sonar / будущие замены) ──────────────────────
+    # ── tier 5: web search (sonar / future replacements) ──────────────────
     "sonar_bothub": {
         "name": "Perplexity sonar (bothub)", "tier": "web_search", "k_tier": 0.8,
         "status": "ok", "tau": "домены из trust.py", "access": "в системе",
@@ -93,8 +93,8 @@ SOURCES = {
         "name": "Serper.dev", "tier": "web_search_infra", "k_tier": 0.0,
         "status": "ok", "access": "free-with-key (VFC_SERPER_KEY)",
         "limits": "тариф провайдера ~$1/1k",
-        "notes": "провайдер валидирован.
-    # ── ключи, которые нужно запросить у провайдеров ────────────────────────────────────────
+        "notes": "провайдер валидирован"},
+    # ── keys that need to be requested from providers ──────────────────────
     "semantic_scholar": {
         "name": "Semantic Scholar", "tier": "scientific", "k_tier": 0.7,
         "status": "backlog", "access": "отказ 2026-10-29, без ключа 429",
@@ -103,13 +103,13 @@ SOURCES = {
         "name": "MBFC через RapidAPI", "tier": "trust_rating", "k_tier": 0.0,
         "status": "paid-small", "access": "$10/мес 100 req / $40 10k",
         "notes": "данные рейтингов для τ новостных доменов; оплата зарубежной картой"},
-    # ── выбраковка ────────────────────────────────────────────────────────
+    # ── rejected ──────────────────────────────────────────────────────────
     "gdelt": {
         "name": "GDELT DOC 2.0", "tier": "news", "k_tier": 0.4,
         "status": "rejected", "notes": "429 на все попытки даже через прокси"},
 }
 
-# категория утверждения → предпочтительные источники (порядок = приоритет опроса)
+# claim category → preferred sources (order = polling priority)
 CATEGORY_ROUTES = {
     "медицина": ["claimreview_google", "claimreview_dump", "europe_pmc", "pubmed", "wikipedia"],
     "наука": ["claimreview_google", "claimreview_dump", "openalex", "europe_pmc", "arxiv"],
@@ -120,7 +120,7 @@ CATEGORY_ROUTES = {
 }
 
 ACCESS_REQUEST_LIST = [
-    # все запрошенные ключи получены (2026-10-29): OpenAlex, Serper; S2 — отказ, бэклог
+    # all requested keys received (2026-10-29): OpenAlex, Serper; S2 — denied, backlog
 ]
 
 

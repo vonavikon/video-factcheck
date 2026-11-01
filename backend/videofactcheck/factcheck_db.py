@@ -1,11 +1,11 @@
-"""Этап 2: матчинг с готовыми факт-чеками (Google Fact Check Tools API / ClaimReview).
+"""Stage 2: matching against existing fact-checks (Google Fact Check Tools API / ClaimReview).
 
-Первый и самый дешёвый слой вердиктов: если утверждение уже проверялось людьми
-(Politifact, Snopes, AFP, «Проверено.медиа»), показываем их вердикт с атрибуцией
-издания — LLM не зовётся вовсе. Решение В12 (live API; локальный дамп — итерация 2).
+The first and cheapest verdict layer: if the claim has already been checked by humans
+(Politifact, Snopes, AFP, «Проверено.медиа»), we show their verdict with the outlet's
+attribution — no LLM involved at all. Decision В12 (live API; a local dump is planned for iteration 2).
 
-Ключ VFC_FACTCHECK_KEY (Google Cloud API key, начинается с AIza). Ключа нет или
-API недоступен — слой молча пропускается, работает sonar-слой.
+Key: VFC_FACTCHECK_KEY (Google Cloud API key, starts with AIza). If the key is missing or
+the API is unreachable, the layer is silently skipped and the sonar layer takes over.
 """
 import os
 import re
@@ -13,11 +13,11 @@ from urllib.parse import urlparse
 
 import httpx
 
-API = "https://factchecktools.googleapis.com/v1alpha1/claims:search"  # v1.1 удалён Google (404), актуален v1alpha1
+API = "https://factchecktools.googleapis.com/v1alpha1/claims:search"  # v1.1 was removed by Google (404), v1alpha1 is current
 
-# словесные рейтинги факт-чекеров → наши три класса.
-# Матчинг по началу слова (\b), не подстрокой: «сложно» не должно ловиться как «ложно».
-# Порядок: сначала смешанные («half true» содержит «true», но это не правда).
+# verbal fact-checker ratings → our three classes.
+# Match on word start (\b), not substring: "сложно" must not match as "ложно".
+# Order: mixed ratings first ("half true" contains "true", but it is not "правда").
 RATING_RE = [
     ("странно", r"\bmixture\b|\bpartly\b|\bhalf[- ]true\b|\bmisleading\b|\bunproven\b|"
                 r"\bчастичн\w*|\bвводит в заблуждение\b|\bнепровер\w*|\bнет данных\b"),
@@ -28,18 +28,18 @@ RATING_RE = [
 
 
 def _map_rating(rating: str) -> tuple[str, str]:
-    """Словесный рейтинг издания → (правда/ложно/странно, пояснение)."""
+    """Verbal outlet rating → (правда/ложно/странно, note)."""
     r = (rating or "").lower()
     for verdict, pattern in RATING_RE:
         if re.search(pattern, r):
             return verdict, ""
-    # незнакомая шкала издания — показываем как есть, классифицируем осторожно
+    # unfamiliar outlet scale — show as is, classify cautiously
     return "странно", f"оригинальный вердикт: «{rating}»"
 
 
 def match(claim: str, lang: str = "ru") -> dict | None:
-    """Утверждение → вердикт из ClaimReview с атрибуцией, либо None (слой пропущен).
-    lang — язык why (ru/en), пришёл из настройки расширения (ревью P1-5)."""
+    """Claim → verdict from ClaimReview with attribution, or None (layer skipped).
+    lang is the language of why (ru/en), taken from the extension setting (review P1-5)."""
     key = os.environ.get("VFC_FACTCHECK_KEY", "").strip()
     if not key:
         return None
@@ -49,7 +49,7 @@ def match(claim: str, lang: str = "ru") -> dict | None:
         if r.status_code != 200:
             return None
         data = r.json()
-    except Exception:  # noqa: BLE001 — слой необязательный, отказ не роняет пайплайн
+    except Exception:  # noqa: BLE001 — optional layer, a failure does not break the pipeline
         return None
 
     best = None
@@ -69,7 +69,7 @@ def match(claim: str, lang: str = "ru") -> dict | None:
     url = (review.get("url") or "").strip()
     verdict, note = _map_rating(rating)
     domain = urlparse(url).netloc.removeprefix("www.") if url else publisher
-    # локализация why: en-пользователь видит английские карточки рядом с sonar-аналогами
+    # why localization: an en user sees English cards next to sonar counterparts
     if lang == "en":
         why = (f"Checked by human fact-checkers ({publisher}): “{rating}”" if rating
                else f"Checked by human fact-checkers ({publisher})")
@@ -83,10 +83,10 @@ def match(claim: str, lang: str = "ru") -> dict | None:
             "domain": domain or publisher, "url": url,
             "title": review.get("title") or "",
             "quote": f"Вердикт факт-чекера: {rating}" if rating else "",
-            "trust": 0.9,  # профессиональный факт-чек
+            "trust": 0.9,  # professional fact-check
         }],
         "relevant": 1,
-        "confidence": "высокая",  # вердикт вынесен человеком-факт-чекером
+        "confidence": "высокая",  # verdict issued by a human fact-checker
         "engine": "claimreview",
         "passes": ["human"],
         "similarity": round(best_sim, 2),
@@ -96,7 +96,7 @@ def match(claim: str, lang: str = "ru") -> dict | None:
 
 
 def _similarity(a: str, b: str) -> float:
-    """Нормализованное пересечение токенов (containment: |A∩B|/min(|A|,|B|))."""
+    """Normalized token intersection (containment: |A∩B|/min(|A|,|B|))."""
     ta = _tokens(a)
     tb = _tokens(b)
     if not ta or not tb:

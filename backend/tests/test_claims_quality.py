@@ -1,5 +1,5 @@
-"""Качество этапа 1 (2026-10-29): significance-фильтр, числовая нормализация,
-контекст в промпте, обратная совместимость extract без channel/published."""
+"""Stage 1 quality (2026-10-29): the significance filter, numeric normalization,
+prompt context, backward compatibility of extract without channel/published."""
 import json
 
 from videofactcheck import claims as cl
@@ -10,7 +10,7 @@ def _seg(i, text="текст"):
 
 
 def _mock_llm(monkeypatch, payload, captured=None):
-    """Подмена llm.chat: возвращает payload, пишёт messages в captured (если дан)."""
+    """Replaces llm.chat: returns payload, writes messages into captured (if given)."""
     def fake_chat(messages, **kw):
         if captured is not None:
             captured.append(messages)
@@ -19,7 +19,7 @@ def _mock_llm(monkeypatch, payload, captured=None):
 
 
 def test_significance_filter(monkeypatch):
-    """significance 5 и 3 остаются claims, 1 уходит в skipped с reason «незначимо»."""
+    """significance 5 and 3 stay as claims, 1 goes to skipped with reason "незначимо"."""
     payload = {"claims": [
         {"quote": "q1", "claim": "Маск основал SpaceX в 2002 году", "seg": 1,
          "type": "fact", "category": "история", "significance": 5,
@@ -42,8 +42,8 @@ def test_significance_filter(monkeypatch):
 
 
 def test_numeric_claim_fields_pass(monkeypatch):
-    """category=«число»: {subject, indicator, value_norm, unit, year} проходят
-    в выход; прочим категориям статистические поля не навешиваются."""
+    """category="число": {subject, indicator, value_norm, unit, year} pass through
+    to the output; other categories do not get the statistical fields."""
     payload = {"claims": [
         {"quote": "три четверти взрослых", "claim": "Три четверти взрослых имеют смартфон",
          "seg": 1, "type": "fact", "category": "число", "significance": 5,
@@ -68,12 +68,12 @@ def test_numeric_claim_fields_pass(monkeypatch):
 
 
 def test_context_and_channel_in_prompt(monkeypatch):
-    """Второй батч получает [контекст] — хвост 12-го сегмента (не длиннее 120
-    символов); канал/дата — в системном промпте; в первом батче контекста нет."""
+    """The second batch gets [контекст] — the tail of segment 12 (no longer than
+    120 chars); channel/date go into the system prompt; the first batch has no context."""
     captured = []
     _mock_llm(monkeypatch, {"claims": [], "skipped": []}, captured)
-    segs = [_seg(i) for i in range(1, 15)]  # 14 сегментов → 2 батча по 12
-    segs[11]["text"] = "длинный " * 50  # 12-й сегмент: предыдущий для 2-го батча
+    segs = [_seg(i) for i in range(1, 15)]  # 14 segments → 2 batches of 12
+    segs[11]["text"] = "длинный " * 50  # segment 12: the previous one for the 2nd batch
     cl.extract(segs, title="Как устроен сон", channel="Наука проспект",
                published="2026-01-05")
     assert len(captured) == 2
@@ -82,20 +82,20 @@ def test_context_and_channel_in_prompt(monkeypatch):
     assert "Канал: Наука проспект" in sys_msg
     assert "дата: 2026-01-05" in sys_msg
     assert "Как устроен сон" in sys_msg
-    assert "рассказчик" in sys_msg  # запрет безымянного спикера
+    assert "рассказчик" in sys_msg  # unnamed speaker forbidden
 
-    # батчи параллельны — порядок вызовов не фиксирован, ищем по содержимому
+    # batches run in parallel — call order is not fixed, find by content
     first_batch = next(c for c in captured if not c[1]["content"].startswith("[контекст] "))
     later_batch = next(c for c in captured if c[1]["content"].startswith("[контекст] "))
-    assert "[контекст]" not in first_batch[1]["content"]  # первому батчу не с чего
+    assert "[контекст]" not in first_batch[1]["content"]  # the first batch has no previous segment
     first_line = later_batch[1]["content"].split("\n")[0]
     assert len(first_line) <= len("[контекст] ") + cl.CONTEXT_TAIL_CHARS
-    assert any(f"[{i}]" in later_batch[1]["content"] for i in range(12, 25))  # сегменты батча на месте
+    assert any(f"[{i}]" in later_batch[1]["content"] for i in range(12, 25))  # the batch's segments are in place
 
 
 def test_extract_without_channel_published(monkeypatch):
-    """Обратная совместимость: extract без channel/published и claims без
-    significance работают — утверждение не теряется, «Канал:» в промпт не идёт."""
+    """Backward compatibility: extract without channel/published and claims without
+    significance still work — the claim is not lost, no "Канал:" goes into the prompt."""
     captured = []
     payload = {"claims": [
         {"quote": "q", "claim": "Старая схема без новых полей", "seg": 1,

@@ -1,4 +1,4 @@
-"""Pay-per-use: квота, кредиты, порядок списания, мокап-пополнение."""
+"""Pay-per-use: quota, credits, charging order, mockup top-up."""
 from videofactcheck import config, store
 
 
@@ -11,7 +11,7 @@ def test_new_account_gets_free_quota(tmp_path, monkeypatch):
 def test_settle_free_first_then_credits(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "DB_PATH", tmp_path / "b.db")
     store.topup("install-2", 5)
-    a = store.settle("install-2", store.FREE_DAILY + 3)  # квота + 3 кредитных
+    a = store.settle("install-2", store.FREE_DAILY + 3)  # quota + 3 paid credits
     assert a["free_left_today"] == 0
     assert a["credits"] == 2  # 5 − 3
     assert store.budget("install-2") == 2
@@ -27,13 +27,13 @@ def test_topup_mock_adds_credits(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "DB_PATH", tmp_path / "b.db")
     a = store.topup("install-4", 100)
     assert a["credits"] == 100
-    assert store.topup("install-4", 99999)["credits"] == 100 + 10000  # потолок мокапа
+    assert store.topup("install-4", 99999)["credits"] == 100 + 10000  # mockup cap
 
 
 def test_free_quota_resets_next_day(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "DB_PATH", tmp_path / "b.db")
-    store.settle("install-5", store.FREE_DAILY)  # выжали квоту
-    # подменяем «сегодня» на завтра
+    store.settle("install-5", store.FREE_DAILY)  # quota exhausted
+    # replace "today" with tomorrow
     import datetime as dt
     class FakeDate(dt.date):
         @classmethod

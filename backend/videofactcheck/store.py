@@ -1,4 +1,4 @@
-"""Хранилище (В21): один SQLite, всё с run_id, схема версионируется."""
+"""Storage (В21): a single SQLite, everything keyed by run_id, versioned schema."""
 import contextlib
 import json
 import sqlite3
@@ -35,12 +35,12 @@ CREATE TABLE IF NOT EXISTS skips (run_id TEXT, quote TEXT, reason TEXT);
 """
 
 _init_lock = threading.Lock()
-_initialized_paths: set[str] = set()  # init на путь БД, не на процесс: тесты подменяют DB_PATH
+_initialized_paths: set[str] = set()  # init per DB path, not per process: tests override DB_PATH
 
 
 def _init_db(db_path: str, con: sqlite3.Connection) -> None:
-    # схема и миграции — один раз на файл БД, не на каждый connect (ревью P1-1):
-    # executescript/ALTER в горячем пути ловили "database is locked" под нагрузкой
+    # schema and migrations — once per DB file, not on every connect (review P1-1):
+    # executescript/ALTER on the hot path hit "database is locked" under load
     with _init_lock:
         if db_path in _initialized_paths:
             return
@@ -48,7 +48,7 @@ def _init_db(db_path: str, con: sqlite3.Connection) -> None:
         try:
             con.execute("ALTER TABLE runs ADD COLUMN install_id TEXT DEFAULT ''")
         except Exception:
-            pass  # колонка уже есть
+            pass  # column already exists
         cur = con.execute("SELECT value FROM meta WHERE key='schema_version'")
         if cur.fetchone() is None:
             con.execute("INSERT INTO meta VALUES ('schema_version', ?)", (str(SCHEMA_VERSION)))
@@ -57,10 +57,10 @@ def _init_db(db_path: str, con: sqlite3.Connection) -> None:
 
 
 def connect():
-    # контекст-менеджер: with connect() as con — коммит + ГАРАНТИРОВАННОЕ закрытие
-    # (голый sqlite3 context manager закрывает транзакцию, но не соединение —
-    # ревью P1-1: утечка дескрипторов при каждом update_run/poll). WAL + таймаут
-    # держат параллельные прогоны без "database is locked"
+    # context manager: with connect() as con — commit + GUARANTEED close
+    # (a bare sqlite3 context manager closes the transaction but not the connection —
+    # review P1-1: a descriptor leak on every update_run/poll). WAL + timeout
+    # keep parallel runs free of "database is locked"
     config.DATA_DIR.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(config.DB_PATH, timeout=10)
     con.row_factory = sqlite3.Row
@@ -157,7 +157,7 @@ def load_claims(run_id: str) -> list[dict]:
     return out
 
 
-# ── аккаунты и кредиты ──────────────────────────────
+# ── accounts and credits ──────────────────────────────
 FREE_DAILY = 10
 
 
@@ -178,7 +178,7 @@ def get_or_create_account(install_id: str) -> dict:
 
 def _account_view(row) -> dict:
     free_day, free_used = row["free_day"], row["free_used"] or 0
-    if free_day != _today():  # новый день — квота обнулилась
+    if free_day != _today():  # new day — the quota has reset
         free_used = 0
         with connect() as con:
             con.execute("UPDATE accounts SET free_day=?, free_used=0 WHERE install_id=?",
@@ -190,13 +190,13 @@ def _account_view(row) -> dict:
 
 
 def budget(install_id: str) -> int:
-    """Сколько машинных вердиктов доступно (free + credits)."""
+    """How many machine verdicts are available (free + credits)."""
     a = get_or_create_account(install_id)
     return a["free_left_today"] + a["credits"]
 
 
 def settle(install_id: str, n: int) -> dict:
-    """Списать n вердиктов: сначала дневная квота, потом кредиты."""
+    """Charge n verdicts: the daily quota first, then credits."""
     a = get_or_create_account(install_id)
     from_free = min(n, a["free_left_today"])
     from_credits = n - from_free
@@ -210,7 +210,7 @@ def settle(install_id: str, n: int) -> dict:
 
 
 def topup(install_id: str, credits: int) -> dict:
-    """Мокап покупки: начислить без оплаты (боевая — webhook платёжки)."""
+    """Purchase mockup: credit without payment (production version — a payment webhook)."""
     get_or_create_account(install_id)
     with connect() as con:
         con.execute("UPDATE accounts SET credits = credits + ? WHERE install_id=?",

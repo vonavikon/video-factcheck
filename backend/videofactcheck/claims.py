@@ -1,13 +1,13 @@
-"""Этап 1: выделение проверяемых утверждений из сегментов транскрипта.
+"""Stage 1: extraction of checkable claims from transcript segments.
 
-Решения В10–В11: схема с дословной цитатой и категорией, БЕЗ числовой
-specificity; мнения/прогнозы/нефальсифицируемые собираются отдельно
-(«вне проверки»); дедуп — нормализованный хэш (embeddings — при необходимости).
+Decisions В10–В11: schema with a verbatim quote and a category, WITHOUT numeric
+specificity; opinions/forecasts/unfalsifiable statements are collected separately
+(as "skip"); dedup uses a normalized hash (embeddings if ever needed).
 
-2026-10-29: предыдущий сегмент идёт в промпт строкой [контекст] (субъект для
-анфор, не источник цитат); channel/published — в контекст промпта; отбор
-значимости в одном вызове — significance 1–5 и детерминированный фильтр
-(SIGNIFICANCE_MIN); при category=«число» — нормализованные поля
+2026-10-29: the previous segment goes into the prompt as a [контекст] line (subject
+for anaphora, not a quote source); channel/published go into the prompt context;
+significance filtering happens in a single call — significance 1–5 plus a deterministic
+filter (SIGNIFICANCE_MIN); when category="число" — normalized fields
 {subject, indicator, value_norm, unit, year}.
 """
 import hashlib
@@ -53,10 +53,10 @@ unit (единица: «доля», «руб.», «чел.»), year (явно н
 Сегменты:
 """
 
-MAX_CLAIMS_PER_VIDEO = 150  # мягкий потолок хранения; экстрагируем всё видео,
-                            # лимит денег живёт в отборе вердиктов (pipeline)
-SIGNIFICANCE_MIN = 3        # порог отбора: оценка ниже — в skipped, reason «незначимо»
-CONTEXT_TAIL_CHARS = 120    # обрезка предыдущего сегмента для строки [контекст]
+MAX_CLAIMS_PER_VIDEO = 150  # soft storage cap; the whole video is extracted,
+                            # the money budget lives in verdict selection (pipeline)
+SIGNIFICANCE_MIN = 3        # selection threshold: lower scores go to skipped with reason "незначимо"
+CONTEXT_TAIL_CHARS = 120    # tail cut of the previous segment for the [контекст] line
 
 
 def normalize(text: str) -> str:
@@ -73,13 +73,14 @@ def claim_hash(claim: str) -> str:
 def extract(segments: list[dict], lang: str = "ru", title: str = "",
             concurrency: int = 4, progress=None, on_batch=None,
             channel: str | None = None, published: str | None = None) -> dict:
-    """Сегменты → {claims, skipped, batch_errors}. Батчи независимы — гоним
-    параллельно (ThreadPoolExecutor): 43-мин видео = 29 батчей, последовательно
-    это 30–60 минут, вперебой — в разы быстрее. progress(done, total) — для статуса.
+    """Segments → {claims, skipped, batch_errors}. Batches are independent — run
+    them in parallel (ThreadPoolExecutor): a 43-min video = 29 batches, sequential
+    would take 30–60 minutes, interleaved is several times faster. progress(done, total)
+    drives the status.
 
-    channel/published (опционально, None-safe) вместе с title попадают в контекст
-    системного промпта. claims с significance < SIGNIFICANCE_MIN после парсинга
-    детерминированно уходят в skipped с reason «незначимо» (без второго вызова LLM)."""
+    channel/published (optional, None-safe) join title in the system prompt
+    context. Claims with significance < SIGNIFICANCE_MIN deterministically go to
+    skipped with reason "незначимо" after parsing (no second LLM call)."""
     from concurrent.futures import ThreadPoolExecutor
 
     claims: list[dict] = []
@@ -106,7 +107,7 @@ def extract(segments: list[dict], lang: str = "ru", title: str = "",
 
     def run_part(part: list[dict], prev: dict | None) -> list[dict]:
         lines = ""
-        if prev is not None:  # субъект для анфор из предыдущего сегмента, НЕ источник цитат
+        if prev is not None:  # anaphora subject from the previous segment, NOT a quote source
             tail = " ".join(prev["text"].split())[-CONTEXT_TAIL_CHARS:]
             lines += f"[контекст] {tail}\n"
         lines += "\n".join(
@@ -119,7 +120,7 @@ def extract(segments: list[dict], lang: str = "ru", title: str = "",
                 json_mode=True,
             )
             data = llm.parse_json(text)
-        except Exception:  # noqa: BLE001 — битый батч не должен валить весь прогон
+        except Exception:  # noqa: BLE001 — a broken batch must not kill the whole run
             errors.append(1)
             return []
         seg_map = {s["id"]: s for s in part}
@@ -131,7 +132,7 @@ def extract(segments: list[dict], lang: str = "ru", title: str = "",
             try:
                 sig = int(c.get("significance"))
             except (TypeError, ValueError):
-                sig = None  # поле не выдалось или мусор — не выкидываем утверждение молча
+                sig = None  # field missing or garbage — do not silently drop the claim
             if sig is not None and sig < SIGNIFICANCE_MIN:
                 skipped.append({"quote": (c.get("quote") or "").strip(),
                                 "reason": "незначимо"})
@@ -170,7 +171,7 @@ def extract(segments: list[dict], lang: str = "ru", title: str = "",
 
     def run_part_with_trace(part, prev):
         if tid:
-            tracing.set_current_trace_id(tid)  # trace_id в каждом воркере (langfuse)
+            tracing.set_current_trace_id(tid)  # trace_id in every worker (langfuse)
         return run_part(part, prev)
 
     from concurrent.futures import as_completed
@@ -182,15 +183,15 @@ def extract(segments: list[dict], lang: str = "ru", title: str = "",
             done += 1
             if progress:
                 progress(done, len(parts))
-            # конвейер: готовый батч уходит дальше (ClaimReview) до конца экстракции;
-            # выполняется в этом же потоке — гонок с мутируемым состоянием нет
+            # pipeline: a finished batch moves on (ClaimReview) before extraction ends;
+            # runs in this same thread — no races over mutable state
             if on_batch and part_claims:
                 try:
                     on_batch(part_claims)
-                except Exception:  # noqa: BLE001 — конвейер не должен валить экстракцию
+                except Exception:  # noqa: BLE001 — the pipeline must not kill extraction
                     pass
 
-    # дедуп: точные повторы по хэшу + парафразы (difflib, числа защищены)
+    # dedup: exact repeats by hash + paraphrases (difflib, numbers protected)
     from .dedup import dedup_claims
     seen: set[str] = set()
     uniq: list[dict] = []

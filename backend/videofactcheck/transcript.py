@@ -1,7 +1,7 @@
-"""Этап 0: транскрипт с таймкодами через yt-dlp captions (решения В6–В8).
+"""Stage 0: timestamped transcript via yt-dlp captions (decisions В6–В8).
 
-Свой минимальный парсер VTT с чисткой роллинг-повторов автосабов —
-таймкоды не трогаем, чистим только текст (В8). Whisper-фолбэк — итерация 2.
+Minimal own VTT parser that strips rolling duplicates from auto-subs —
+timestamps are untouched, only text is cleaned (В8). Whisper fallback is planned for iteration 2.
 """
 import re
 import subprocess
@@ -15,7 +15,7 @@ TAGS = re.compile(r"<[^>]+>|\{\\[^}]*\}")
 
 
 def _ytdlp_base() -> list[str]:
-    """yt-dlp + прокси из VFC_YTDLP_PROXY (например локальный SOCKS-туннель)."""
+    """yt-dlp + proxy from VFC_YTDLP_PROXY (e.g. a local SOCKS tunnel)."""
     import os
     proxy = os.environ.get("VFC_YTDLP_PROXY", "")
     base = ["yt-dlp", "--no-update", "--skip-download"]
@@ -29,8 +29,8 @@ def _sec(h: str, m: str, s: str, ms: str) -> float:
 
 
 def fetch(url: str, langs: str = "ru,ru-orig,en,en-orig") -> dict:
-    """Скачивает субтитры (ручные приоритетнее, потом автосабы) → метаданные + cues."""
-    # СЕК-6: только YouTube-watch URL (анти-SSRF для yt-dlp)
+    """Downloads subtitles (manual first, then auto-subs) → metadata + cues."""
+    # СЕК-6: YouTube-watch URLs only (anti-SSRF for yt-dlp)
     from urllib.parse import urlparse
     _p = urlparse(url if "://" in url else "https://" + url)
     if not (_p.netloc == "youtube.com" or _p.netloc.endswith(".youtube.com")
@@ -74,7 +74,7 @@ def fetch(url: str, langs: str = "ru,ru-orig,en,en-orig") -> dict:
                     "duration": float(duration or 0),
                     "lang": lang, "sub_kind": kind, "cues": cues,
                 }
-        # yt-dlp упал (429 от YouTube с IP датацентра и т.п.) — это не «нет сабов»
+        # yt-dlp failed (429 from YouTube on a datacenter IP etc.) — this is not "no subs"
         if dl.returncode != 0 or "429" in dl.stderr or "Too Many Requests" in dl.stderr:
             import sys
             print(f"[transcript:err] yt-dlp: {dl.stderr.strip()[:400]}", file=sys.stderr)
@@ -87,20 +87,20 @@ def fetch(url: str, langs: str = "ru,ru-orig,en,en-orig") -> dict:
 
 
 def _parse_vtt(path: Path) -> list[dict]:
-    """VTT → cues [{start,end,text}]. Блочный разбор по спецификации WebVTT:
-    cue-блок = необязательная строка-идентификатор + строка с таймингом + текст
-    до пустой строки; идентификатор отбрасывается (тест TR: «1», «2» не клеятся
-    к тексту предыдущего cue). Роллинг-дубли автосабов убираются после.
+    """VTT → cues [{start,end,text}]. Block parsing per the WebVTT spec:
+    a cue block = optional identifier line + timing line + text up to a blank
+    line; the identifier is discarded (test TR: "1", "2" must not stick
+    to the previous cue's text). Rolling duplicates from auto-subs are removed after.
     """
     text = path.read_text(encoding="utf-8", errors="replace")
-    # срезаем заголовок WEBVTT и метаданные до первой пустой строки
+    # cut off the WEBVTT header and metadata up to the first blank line
     body = text.split("\n\n", 1)[1] if text.startswith("WEBVTT") else text
     cues: list[dict] = []
     for block in body.split("\n\n"):
         lines = [ln.strip("\r") for ln in block.strip().splitlines() if ln.strip()]
         ts_idx = next((i for i, ln in enumerate(lines) if "-->" in ln), None)
         if ts_idx is None:
-            continue  # блок без тайминга — примечание/стиль/идентификатор-сирота
+            continue  # block without timing — note/style/orphan identifier
         m = TS.search(lines[ts_idx])
         if not m:
             continue
@@ -114,17 +114,17 @@ def _parse_vtt(path: Path) -> list[dict]:
         cue_text = " ".join(t for t in body_lines if t and t != "&nbsp;")
         if not cue_text:
             continue
-        # роллинг-повторы: тот же текст или вхождение в предыдущий cue
+        # rolling repeats: same text, or contained in the previous cue
         prev = cues[-1]["text"] if cues else ""
         if cue_text == prev or (prev and cue_text in prev):
             continue
         if prev and prev in cue_text:
-            cues[-1]["text"] = cue_text  # автосабы расширяют строку — берём полную
+            cues[-1]["text"] = cue_text  # auto-subs extend the line — keep the full one
             cues[-1]["end"] = max(cues[-1]["end"], end)
             continue
         cues.append({"start": start, "end": end, "text": cue_text})
 
-    # схлопнуть подряд идущие с одинаковым текстом
+    # collapse consecutive cues with identical text
     out: list[dict] = []
     for c in cues:
         if out and out[-1]["text"] == c["text"]:
@@ -135,7 +135,7 @@ def _parse_vtt(path: Path) -> list[dict]:
 
 
 def to_segments(cues: list[dict], max_chars: int = 220, max_gap: float = 2.5) -> list[dict]:
-    """Cues → сегменты для LLM: [{id, t_start, t_end, text}] (~1-2 предложения)."""
+    """Cues → LLM segments: [{id, t_start, t_end, text}] (~1-2 sentences)."""
     segs: list[dict] = []
     cur: dict = {}
     for c in cues:

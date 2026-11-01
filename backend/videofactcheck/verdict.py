@@ -1,11 +1,11 @@
-"""Этапы 3–4 (объединены): поиск + вердикт через Perplexity sonar (bothub).
+"""Stages 3–4 (merged): search + verdict via Perplexity sonar (bothub).
 
-Sonar делает веб-поиск на своей стороне и отвечает с цитатами-источниками —
-внешний поисковый API не нужен (Bing без JS деградирует, DDG блокируется,
-Google требует JS; решение зафиксировано в, В14).
+Sonar runs web search on its side and answers with source citations —
+no external search API needed (Bing degrades without JS, DDG blocks bots,
+Google requires JS; decision recorded in В14).
 
-Два прохода sonar (поиск недетерминирован — проходы реально разные);
-расхождение вердиктов → «странно» (В16). Цитата обязательна (В18).
+Two sonar passes (search is non-deterministic — the passes really differ);
+verdict disagreement → "странно" (В16). A quote is mandatory (В18).
 """
 import os
 
@@ -33,8 +33,8 @@ PROMPT = """Ты — факт-чекер с доступом к веб-поис�
 {"verdict":"...","why":"...","sources":[{"title":"...","url":"...","quote":"..."}]}
 """
 
-# подстановка языка обоснования: значения verdict («правда»…) остаются русскими —
-# это внутренний контракт сервера, клиент переводит на выводе (verdictLabel)
+# justification language substitution: verdict values ("правда"…) stay Russian —
+# this is the server's internal contract, the client translates for display (verdictLabel)
 LANG_WHY = {
     "ru": "why: одно предложение на русском для показа пользователю",
     "en": "why: one sentence in English for the user; verdict values stay Russian",
@@ -42,8 +42,8 @@ LANG_WHY = {
 
 
 def check(claim: str, lang: str = "ru", passes: int = 2, title: str = "") -> dict:
-    """Утверждение → вердикт с источниками. Два прохода sonar, расхождение → «странно».
-    lang задаёт язык обоснования why (ru/en); значения verdict всегда русские."""
+    """Claim → verdict with sources. Two sonar passes, disagreement → "странно".
+    lang sets the language of why (ru/en); verdict values are always Russian."""
     ctx = f"\nКонтекст: утверждение из видео «{title}»." if title else ""
     prompt = PROMPT.replace(
         "why: одно предложение на русском для показа пользователю",
@@ -53,11 +53,11 @@ def check(claim: str, lang: str = "ru", passes: int = 2, title: str = "") -> dic
         text = llm.chat(
             [{"role": "system", "content": prompt + ctx},
              {"role": "user", "content": f"УТВЕРЖДЕНИЕ: {claim}"}],
-            model=SONAR_MODEL, json_mode=False, max_tokens=3000,  # sonar: только text-режим
+            model=SONAR_MODEL, json_mode=False, max_tokens=3000,  # sonar: text mode only
         )
         try:
             data = llm.parse_json(text)
-        except Exception:  # noqa: BLE001 — битый JSON = непроход
+        except Exception:  # noqa: BLE001 — broken JSON = failed pass
             verdicts.append("странно")
             whys.append("Модель вернула нечитаемый ответ")
             sources_by_pass.append([])
@@ -78,17 +78,17 @@ def check(claim: str, lang: str = "ru", passes: int = 2, title: str = "") -> dic
 
 
 def _confidence(passes: list[str], votes: list[dict]) -> str:
-    """Уровень уверенности вердикта (пункт-5-фидбек).
+    """Verdict confidence level (feedback item 5).
 
-    Честные уровни вместо псевдоточных процентов (исследование: единый скор
-    невалидирован; FactScore: даже GPT-4 ошибается в ~27% атомарных фактов).
-    Формула:
-      база 0.6 — оба прохода sonar сошлись на вердикте (разошлись → «странно»)
-      +0.25   — ≥2 источника с цитатами и средним доверием ≥0.7  → «высокая»
-      +0.15   — есть источники со средним доверием ≥0.5           → «средняя»
-      −0.05   — только слабые источники (среднее <0.5)
-      −0.15   — источников нет вовсе
-    итог: ≥0.8 «высокая», ≥0.6 «средняя», иначе «низкая».
+    Honest levels instead of pseudo-precise percentages (research: a single score
+    is unvalidated; FactScore: even GPT-4 gets ~27% of atomic facts wrong).
+    Formula:
+      base 0.6 — both sonar passes agreed on the verdict (disagreement → "странно")
+      +0.25   — ≥2 sources with quotes and average trust ≥0.7    → "высокая"
+      +0.15   — sources exist with average trust ≥0.5            → "средняя"
+      −0.05   — only weak sources (average <0.5)
+      −0.15   — no sources at all
+    result: ≥0.8 "высокая", ≥0.6 "средняя", otherwise "низкая".
     """
     if len(set(passes)) > 1:
         return "низкая"
@@ -108,7 +108,7 @@ def _confidence(passes: list[str], votes: list[dict]) -> str:
 
 
 def _safe_url(url: str) -> str | None:
-    """Только http(s) и валидный домен: защита от javascript:-инъекций через LLM (СЕК-1)."""
+    """http(s) and a valid domain only: protection against javascript: injections via the LLM (СЕК-1)."""
     from urllib.parse import urlparse
     import re
     try:
@@ -123,10 +123,10 @@ def _safe_url(url: str) -> str | None:
 
 
 def _votes(sources_by_pass: list[list[dict]]) -> list[dict]:
-    """Источники лучшего прохода (первого с непустым списком), с весом доверия.
+    """Sources of the best pass (the first with a non-empty list), with trust weights.
 
-    Правило В18 в коде, а не только в промпте: источник без дословной цитаты
-    не приводится (модель могла его выдумать).
+    Rule В18 enforced in code, not just in the prompt: a source without a verbatim
+    quote is not included (the model could have invented it).
     """
     best = next((s for s in sources_by_pass if s), [])
     votes, seen = [], set()
@@ -137,7 +137,7 @@ def _votes(sources_by_pass: list[list[dict]]) -> list[dict]:
             continue
         url = _safe_url(url)
         if not url:
-            continue  # javascript:/мусорные схемы от LLM — не источник
+            continue  # javascript:/garbage schemes from the LLM are not sources
         domain = url.split("/")[2].lower().removeprefix("www.") if "/" in url else ""
         if not domain:
             continue
@@ -164,14 +164,14 @@ def _result(verdict: str, why: str, votes: list[dict], passes: list[str]) -> dic
 
 
 def fuse(result: dict, lang: str = "ru") -> dict:
-    """Влияние науки на вердикт — шаг 2 дилеммы.
+    """Science's influence on the verdict — step 2 of the dilemma.
 
-    Гварды уже посчитаны в plausibility.influential (дословная цитата +
-    directly_on_topic + год ≥ 2015 либо обзор/мета-анализ). Эпистемика:
-    наука НИКОГДА не выносит «ложно» — конфликт с sonar понижает вердикт
-    до «странно» с уверенностью «низкая» и склееным обоснованием.
-    Возврат «правда»+supports не повышает уверенность до калибровки на
-    золотом наборе (будущая итерация байес-аккумулятора).
+    Guards are already computed in plausibility.influential (verbatim quote +
+    directly_on_topic + year ≥ 2015 or a review/meta-analysis). Epistemics:
+    science NEVER issues "ложно" — a conflict with sonar downgrades the verdict
+    to "странно" with confidence "низкая" and a glued justification.
+    A "правда"+supports return does not raise confidence until calibrated
+    on the golden set (a future bayesian-accumulator iteration).
     """
     p = (result or {}).get("plausibility") or {}
     if not p.get("influential"):

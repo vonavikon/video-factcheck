@@ -1,9 +1,9 @@
-"""Этап 3: веб-поиск по утверждению (решения В14–В15).
+"""Stage 3: web search per claim (decisions В14–В15).
 
-Бэкенды: bing (без ключа, личный тест; работает с локального RU-IP напрямую) \
-и serper (прод, при VFC_SERPER_KEY — лучше качество, Google-выдача). \
-DDG отпал: блокируется и локально, и с датацентровых IP (anomaly-202).
-Сниппеты-only; страницы — итерация 2.
+Backends: bing (no key, personal testing; works directly from a local RU IP) \
+and serper (production, with VFC_SERPER_KEY — better quality, Google results). \
+DDG was dropped: blocked both locally and from datacenter IPs (anomaly-202).
+Snippets only; full pages are planned for iteration 2.
 """
 import base64
 import html as html_mod
@@ -39,9 +39,9 @@ def _proxy() -> str | None:
 
 
 def _unwrap_bing(href: str) -> str:
-    """bing.com/ck/a?!&&p=...&u=a1<base64url реального URL> → URL.
+    """bing.com/ck/a?!&&p=...&u=a1<base64url of the real URL> → URL.
 
-    Битый/поддельный base64 — вернуть исходную ссылку, а не мусорный URL.
+    On broken/forged base64 return the original link rather than a garbage URL.
     """
     try:
         q = parse_qs(urlparse(href).query)
@@ -57,7 +57,7 @@ def _unwrap_bing(href: str) -> str:
 
 
 def _make_queries(claim: str, lang: str) -> list[str]:
-    """LLM сжимает утверждение в поисковые запросы: язык утверждения + английский."""
+    """LLM compresses the claim into search queries: claim language + English."""
     from . import llm
     try:
         text = llm.chat(
@@ -71,7 +71,7 @@ def _make_queries(claim: str, lang: str) -> list[str]:
         )
         qs = [q.strip() for q in llm.parse_json(text).get("queries", []) if q and q.strip()]
         return qs[:2] or [claim[:100]]
-    except Exception:  # noqa: BLE001 — деградация до сырого утверждения
+    except Exception:  # noqa: BLE001 — degrade to the raw claim
         return [claim[:100]]
 
 
@@ -111,10 +111,10 @@ def _bing(claim: str, lang: str, n: int) -> list[dict]:
 
 
 def search_web(claim: str, lang: str = "ru", n: int = 6) -> list[dict]:
-    """Утверждение → результаты [{title,url,snippet,domain}] после фильтра мусора.
+    """Claim → results [{title,url,snippet,domain}] after junk filtering.
 
-    Целое предложение Bing-у не покажешь — LLM сжимает утверждение в 2 ключевых
-    запроса (язык утверждения + английский), результаты объединяются.
+    A full sentence is useless to Bing — the LLM compresses the claim into 2 keyword
+    queries (claim language + English), results are merged.
     """
     queries = _make_queries(claim, lang)
     raw: list[dict] = []
