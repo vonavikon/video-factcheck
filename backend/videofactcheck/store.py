@@ -1,4 +1,4 @@
-"""Storage (В21): a single SQLite, everything keyed by run_id, versioned schema."""
+"""Storage (B21): a single SQLite, everything keyed by run_id, versioned schema."""
 import contextlib
 import json
 import sqlite3
@@ -39,7 +39,7 @@ _initialized_paths: set[str] = set()  # init per DB path, not per process: tests
 
 
 def _init_db(db_path: str, con: sqlite3.Connection) -> None:
-    # schema and migrations — once per DB file, not on every connect (review P1-1):
+    # schema and migrations, once per DB file, not on every connect (review P1-1):
     # executescript/ALTER on the hot path hit "database is locked" under load
     with _init_lock:
         if db_path in _initialized_paths:
@@ -57,8 +57,8 @@ def _init_db(db_path: str, con: sqlite3.Connection) -> None:
 
 
 def connect():
-    # context manager: with connect() as con — commit + GUARANTEED close
-    # (a bare sqlite3 context manager closes the transaction but not the connection —
+    # context manager: with connect() as con gives commit + GUARANTEED close
+    # (a bare sqlite3 context manager closes the transaction but not the connection;
     # review P1-1: a descriptor leak on every update_run/poll). WAL + timeout
     # keep parallel runs free of "database is locked"
     config.DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -178,7 +178,7 @@ def get_or_create_account(install_id: str) -> dict:
 
 def _account_view(row) -> dict:
     free_day, free_used = row["free_day"], row["free_used"] or 0
-    if free_day != _today():  # new day — the quota has reset
+    if free_day != _today():  # new day, the quota has reset
         free_used = 0
         with connect() as con:
             con.execute("UPDATE accounts SET free_day=?, free_used=0 WHERE install_id=?",
@@ -210,7 +210,7 @@ def settle(install_id: str, n: int) -> dict:
 
 
 def topup(install_id: str, credits: int) -> dict:
-    """Purchase mockup: credit without payment (production version — a payment webhook)."""
+    """Purchase mockup: credit without payment (production version: a payment webhook)."""
     get_or_create_account(install_id)
     with connect() as con:
         con.execute("UPDATE accounts SET credits = credits + ? WHERE install_id=?",

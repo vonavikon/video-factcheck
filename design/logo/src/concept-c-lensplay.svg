@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-  <!-- C. «Лупа-плэй»: линза, в стекле — play-треугольник, галочка акцентом.
-       Риск по ресёрчу: доминирующая лупа = жанр поиска/антиплагиата, поэтому
-       треугольник в стекле крупный, а галочка вынесена. -->
+  <!-- C. "Lens-play": a lens with a play triangle in the glass and a checkmark as the accent.
+       Research risk: a dominant magnifier is the search/plagiarism-check genre, so the
+       triangle in the glass is large and the checkmark sits outside. -->
   <circle cx="56" cy="56" r="34" fill="none" stroke="#16181D" stroke-width="12"/>
   <line x1="81" y1="81" x2="102" y2="102" stroke="#16181D" stroke-width="12" stroke-linecap="round"/>
   <path d="M50 42 L72 56 L50 70 Z" fill="#2F6FED" stroke="#2F6FED" stroke-width="8" stroke-linejoin="round"/>

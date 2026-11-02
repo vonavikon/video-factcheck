@@ -114,7 +114,7 @@ def test_claimreview_pipeline_via_on_batch(monkeypatch, tmp_path):
     saved = {c["claim"]: c for c in st["claims"]}
     assert saved[claims[0]["claim"]]["why"].startswith("Проверено людьми")  # pipelined verdict
     assert saved[claims[1]["claim"]]["verdict"] == "ложно"  # the sonar layer is alive
-    # claim 0 was matched twice (on_batch + layer 1 afterwards) — acceptable, but the verdict is one;
+    # claim 0 was matched twice (on_batch + layer 1 afterwards), acceptable, but the verdict is one;
     # sonar was not run on it
     assert calls["sonar"] == 1
 
@@ -167,7 +167,7 @@ def _mocked_run(monkeypatch, tmp_path, claims: list[dict], *, check_delay: float
     monkeypatch.setattr(config, "DB_PATH", tmp_path / "t.db")
     monkeypatch.delenv("VFC_DEV_UNLIMITED", raising=False)
     monkeypatch.setenv("VFC_PLAUSIBILITY", "0")  # no network; the layer is tested separately  # =1 in the dev .env
-    monkeypatch.setattr(tracing, "client", lambda: None)  # langfuse disabled — no network
+    monkeypatch.setattr(tracing, "client", lambda: None)  # langfuse disabled, no network
     t = {"title": "Тест", "video_id": "vid", "duration": 600.0, "lang": "ru",
          "sub_kind": "auto", "cues": [{"start": 0.0, "end": 2.0, "text": "текст"}]}
     monkeypatch.setattr(pipeline.claims_mod, "extract",
@@ -176,7 +176,7 @@ def _mocked_run(monkeypatch, tmp_path, claims: list[dict], *, check_delay: float
     state = {"sonar": [], "phases": []}
 
     def fake_check(claim, lang="ru", passes=2, title=""):
-        state["sonar"].append(claim)  # list.append is atomic — a counter without a lock
+        state["sonar"].append(claim)  # list.append is atomic, a counter without a lock
         if check_delay:
             time.sleep(check_delay)
         return {"verdict": "правда", "why": "мок-вердикт", "votes": [], "relevant": 0,
@@ -210,7 +210,7 @@ def test_verdicts_parallel_3_workers(monkeypatch, tmp_path):
     st = pipeline.get_status(run_id)
     assert st["status"] == "done", st.get("error")
     assert state["elapsed"] < 0.6, f"пул не распараллелил: {state['elapsed']:.2f}с"
-    assert len(state["sonar"]) == 6  # call order does not matter — all arrived
+    assert len(state["sonar"]) == 6  # call order does not matter, all arrived
     assert set(state["sonar"]) == {c["claim"] for c in claims}
     saved = {c["hash"]: c for c in st["claims"]}
     assert len(saved) == 6
@@ -254,7 +254,7 @@ def test_sonar_failure_does_not_kill_run(monkeypatch, tmp_path):
     st = pipeline.get_status(run_id)
     assert st["status"] == "done", st.get("error")
     saved = {c["hash"]: c for c in st["claims"]}
-    assert saved["h1"]["verdict"] is None  # the failed one — no verdict
+    assert saved["h1"]["verdict"] is None  # the failed one, no verdict
     assert saved["h0"]["verdict"] == "правда" and saved["h2"]["verdict"] == "правда"
     assert st["summary"]["checked"] == 2
     assert "verdict 3/3" in state["phases"]  # K counts failed ones as finished too
@@ -296,7 +296,7 @@ def test_plausibility_cjk_retry(monkeypatch):
 
 
 def test_plausibility_cjk_gives_up(monkeypatch):
-    """Persistent leakage (3 attempts) — the layer stays silent, the Chinese block is not shown."""
+    """Persistent leakage (3 attempts); the layer stays silent, the Chinese block is not shown."""
     import json as _json
     cjk = _json.dumps({"relation": "supports", "why": "米诺地尔是有效的血管扩张剂。",
                        "quote": "minoxidil is a vasodilator", "article": 0},
@@ -337,14 +337,14 @@ def test_plaus_relevance_direct_modern_influential(monkeypatch):
 
 
 def test_plaus_relevance_adjacent_never_influential(monkeypatch):
-    """An adjacent article (xerostomia vs withdrawal syndrome) — a block without influence."""
+    """An adjacent article (xerostomia vs withdrawal syndrome): a block without influence."""
     pl = _guard_env(monkeypatch, _nli(relevance="adjacent"), _art(year="2024"))
     out = pl.check("X", "ru")
     assert out["relation"] == "refutes" and out["influential"] is False
 
 
 def test_plaus_relevance_missing_defaults_adjacent(monkeypatch):
-    """The NLI gave no relevance — cautious default: not influential."""
+    """The NLI gave no relevance; cautious default: not influential."""
     import json as _json
     reply = _json.dumps({"relation": "refutes", "why": "Наука против.",
                          "quote": "q", "article": 0}, ensure_ascii=False)
@@ -388,7 +388,7 @@ def test_fuse_noop_without_guards():
     for rel, v in (("refutes", "правда"), ("supports", "ложно")):
         r = {"verdict": v, "why": "w", "confidence": "высокая",
              "plausibility": {"relation": rel, "influential": False, "why": "x"}}
-        assert fuse(r, "ru") is r  # without guards — the same object unchanged
+        assert fuse(r, "ru") is r  # without guards, the same object unchanged
     # science never touches "странно" at all
     r2 = {"verdict": "странно", "why": "w",
           "plausibility": {"relation": "refutes", "influential": True, "why": "x"}}

@@ -1,7 +1,7 @@
-"""Stage 3: web search per claim (decisions В14–В15).
+"""Stage 3: web search per claim (decisions B14-B15).
 
 Backends: bing (no key, personal testing; works directly from a local RU IP) \
-and serper (production, with VFC_SERPER_KEY — better quality, Google results). \
+and serper (production, with VFC_SERPER_KEY; better quality, Google results). \
 DDG was dropped: blocked both locally and from datacenter IPs (anomaly-202).
 Snippets only; full pages are planned for iteration 2.
 """
@@ -71,7 +71,7 @@ def _make_queries(claim: str, lang: str) -> list[str]:
         )
         qs = [q.strip() for q in llm.parse_json(text).get("queries", []) if q and q.strip()]
         return qs[:2] or [claim[:100]]
-    except Exception:  # noqa: BLE001 — degrade to the raw claim
+    except Exception:  # noqa: BLE001: degrade to the raw claim
         return [claim[:100]]
 
 
@@ -113,7 +113,7 @@ def _bing(claim: str, lang: str, n: int) -> list[dict]:
 def search_web(claim: str, lang: str = "ru", n: int = 6) -> list[dict]:
     """Claim → results [{title,url,snippet,domain}] after junk filtering.
 
-    A full sentence is useless to Bing — the LLM compresses the claim into 2 keyword
+    A full sentence is useless to Bing, so the LLM compresses the claim into 2 keyword
     queries (claim language + English), results are merged.
     """
     queries = _make_queries(claim, lang)

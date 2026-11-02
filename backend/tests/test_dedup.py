@@ -5,7 +5,7 @@ from videofactcheck import dedup as dd
 
 
 def _ratio(a: str, b: str) -> float:
-    """The actual ratio over normalized strings — for pinning it down in tests."""
+    """The actual ratio over normalized strings, for pinning it down in tests."""
     return SequenceMatcher(None, dd.normalize(a), dd.normalize(b)).ratio()
 
 
@@ -30,7 +30,7 @@ def test_exact_duplicate_first_wins():
 
 
 def test_paraphrase_removed_default_threshold():
-    # actual ratio 0.8861 >= 0.72 — caught by the default threshold
+    # actual ratio 0.8861 >= 0.72, caught by the default threshold
     a = "На Земле было пять массовых вымираний"
     b = "На Земле произошло пять массовых вымираний"
     assert _ratio(a, b) >= 0.72
@@ -41,7 +41,7 @@ def test_paraphrase_removed_default_threshold():
 def test_paraphrase_reorder_removed_at_floor_threshold():
     # a pure reordering of the same words; actual ratio 0.6216 < 0.72,
     # so this test uses a 0.6 threshold (the floor from the task). The task's
-    # pair "Пять массовых вымираний произошло на Земле" gives 0.5823 < 0.6 —
+    # pair "Пять массовых вымираний произошло на Земле" gives 0.5823 < 0.6,
     # below the floor, so the test uses the "...было на Земле" reordering instead.
     a = "На Земле было пять массовых вымираний"
     b = "Пять массовых вымираний было на Земле"
@@ -71,7 +71,7 @@ def test_same_numbers_paraphrase_removed():
 
 
 def test_dissimilar_both_kept():
-    # actual ratio 0.2319 — far from the threshold
+    # actual ratio 0.2319, far from the threshold
     a = "Кошки спят по 16 часов в сутки"
     b = "Рим был основан в 753 году до нашей эры"
     assert _ratio(a, b) < 0.72
@@ -97,7 +97,7 @@ def test_order_preserved():
 
 
 def test_length_prefilter_no_false_merge():
-    # normalized string length gap is 74% > 60% — difflib is not run,
+    # normalized string length gap is 74% > 60%, difflib is not run,
     # both claims are kept (the real ratio 0.407 is below the threshold anyway)
     a = "Численность волков в России растёт"
     b = ("Численность волков в России растёт уже несколько лет подряд "

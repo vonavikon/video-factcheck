@@ -6,7 +6,7 @@ Endpoints:
   GET  /api/run/{run_id}          → status + verdicts (polled by the extension)
 
 Protection against foreign sites (scenario AD-SRV-01): CORS is open only to
-YouTube pages and chrome-extension — a third-party site cannot start a run
+YouTube pages and chrome-extension; a third-party site cannot start a run
 from the user's browser. The server must listen on 127.0.0.1 only.
 """
 from fastapi import FastAPI, Request
@@ -22,7 +22,7 @@ app = FastAPI(title="videofactcheck")
 
 @app.on_event("startup")
 def cleanup_orphans() -> None:
-    """Runs stuck in running after a server restart are marked as errored —
+    """Runs stuck in running after a server restart are marked as errored;
     the panel must not wait forever for a dead run (scenario SRV-06)."""
     from . import store
     with store.connect() as con:
@@ -68,12 +68,12 @@ def _rate_limited(request: Request) -> bool:
 
 
 def _authed(request: Request) -> bool:
-    """API token in the X-API-Key header; without it — a rate-limited anonymous caller."""
+    """API token in the X-API-Key header; without it, a rate-limited anonymous caller."""
     import os
     expected = os.environ.get("VFC_API_KEY", "").strip()
     if not expected:
         import sys
-        # fail-closed: non-localhost without a key — denied (audit #3)
+        # fail-closed: non-localhost without a key is denied (audit #3)
         host = request.client.host if request.client else ""
         if host.startswith("127.") or host == "::1":
             return True  # local development
@@ -110,7 +110,7 @@ def check(req: CheckReq, request: Request) -> dict:
                  and t.get("video_id")
                  and all(isinstance(c.get("text", ""), str) and len(c.get("text", "")) <= 500
                          for c in t["cues"][:50])
-                 and len(str(t)) <= 500_000)  # СЕК-4: client transcript limits
+                 and len(str(t)) <= 500_000)  # SEC-4: client transcript limits
     vlang = req.verdict_lang if req.verdict_lang in ("ru", "en") else None
     return pipeline.start_run(req.url, transcript=t if valid else None,
                               install_id=req.install_id, verdict_lang=vlang)
@@ -123,7 +123,7 @@ def account(install_id: str) -> dict:
 
 @app.post("/api/topup")
 def topup(req: TopupReq, request: Request) -> dict:
-    # mockup behind an env flag (СЕК-2): the production purchase flow is a signed payment webhook
+    # mockup behind an env flag (SEC-2): the production purchase flow is a signed payment webhook
     import os
     origin = request.headers.get("origin", "")
     if origin and not _origin_allowed(origin):

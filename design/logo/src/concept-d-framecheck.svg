@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-  <!-- D. «Кадр с галочкой»: рамка кадра видео + галочка. Самый безопасный
-       и нейтральный знак, но и самый безликий: гибрид чекбокса и плеера. -->
+  <!-- D. "Frame with a checkmark": a video frame outline + a checkmark. The safest
+       and most neutral sign, but also the most faceless: a checkbox-player hybrid. -->
   <rect x="22" y="34" width="84" height="60" rx="16" fill="none" stroke="#2F6FED" stroke-width="12"/>
   <path d="M46 64 L58 76 L84 46" fill="none" stroke="#2F6FED" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

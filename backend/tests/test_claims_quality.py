@@ -68,7 +68,7 @@ def test_numeric_claim_fields_pass(monkeypatch):
 
 
 def test_context_and_channel_in_prompt(monkeypatch):
-    """The second batch gets [контекст] — the tail of segment 12 (no longer than
+    """The second batch gets [контекст], the tail of segment 12 (no longer than
     120 chars); channel/date go into the system prompt; the first batch has no context."""
     captured = []
     _mock_llm(monkeypatch, {"claims": [], "skipped": []}, captured)
@@ -84,7 +84,7 @@ def test_context_and_channel_in_prompt(monkeypatch):
     assert "Как устроен сон" in sys_msg
     assert "рассказчик" in sys_msg  # unnamed speaker forbidden
 
-    # batches run in parallel — call order is not fixed, find by content
+    # batches run in parallel, call order is not fixed, find by content
     first_batch = next(c for c in captured if not c[1]["content"].startswith("[контекст] "))
     later_batch = next(c for c in captured if c[1]["content"].startswith("[контекст] "))
     assert "[контекст]" not in first_batch[1]["content"]  # the first batch has no previous segment
@@ -95,7 +95,7 @@ def test_context_and_channel_in_prompt(monkeypatch):
 
 def test_extract_without_channel_published(monkeypatch):
     """Backward compatibility: extract without channel/published and claims without
-    significance still work — the claim is not lost, no "Канал:" goes into the prompt."""
+    significance still work; the claim is not lost, no "Канал:" goes into the prompt."""
     captured = []
     payload = {"claims": [
         {"quote": "q", "claim": "Старая схема без новых полей", "seg": 1,

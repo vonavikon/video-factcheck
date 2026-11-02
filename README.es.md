@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![tests](https://github.com/vonavikon/video-factcheck/actions/workflows/tests.yml/badge.svg)](https://github.com/vonavikon/video-factcheck/actions/workflows/tests.yml)
 
-[RU](README.md) · [EN](README.en.md) · [中文](README.zh.md) · **Español** · [Français](README.fr.md)
+[RU](README.ru.md) · [EN](README.md) · [中文](README.zh.md) · **Español** · [Français](README.fr.md)
 
 Una extensión de Chrome (MV3) que verifica las afirmaciones de videos de YouTube mientras los ves. Lee los subtítulos directamente de la página, el servidor extrae las afirmaciones verificables con su marca de tiempo, comprueba cada una (contra verificaciones humanas existentes, búsqueda web y artículos científicos) y muestra los veredictos «verdadero / falso / dudoso» en un panel junto al reproductor. Un clic en la marca de tiempo salta al momento del video donde se dijo la afirmación; cada veredicto lleva una fuente con cita textual.
 

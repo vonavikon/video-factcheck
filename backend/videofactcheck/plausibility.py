@@ -54,7 +54,7 @@ def enabled() -> bool:
 
 def _en_query(claim: str, lang: str) -> str:
     """English search query: science is published in English.
-    For an ru claim — one cheap call: rephrase it into an EN search query."""
+    For an ru claim, one cheap call: rephrase it into an EN search query."""
     if lang == "en":
         return claim
     try:
@@ -65,7 +65,7 @@ def _en_query(claim: str, lang: str) -> str:
              {"role": "user", "content": claim}],
             max_tokens=3000, temperature=0.0)
         return (out or "").strip().strip('"')[:200] or claim
-    except Exception:  # noqa: BLE001 — optional layer
+    except Exception:  # noqa: BLE001: optional layer
         return claim
 
 
@@ -155,7 +155,7 @@ def check(claim: str, lang: str = "ru") -> dict | None:
         prompt = (ADJUDICATE_PROMPT.replace("{LANG}", "русском" if lang == "ru" else "English")
                   .replace("{N}", "0-" + str(len(articles) - 1)))
         # why must be in the user's language: a Chinese answer is retried,
-        # at most 3 attempts; persistent leakage — the layer stays silent (None)
+        # at most 3 attempts; persistent leakage means the layer stays silent (None)
         data: dict = {}
         for attempt in range(3):
             raw = llm.chat(
@@ -172,7 +172,7 @@ def check(claim: str, lang: str = "ru") -> dict | None:
         if _cjk((data.get("why") or "")):
             return None  # showing Chinese text to the user is worse than staying silent
         # step-2 guards: science influences the verdict only with
-        # a verbatim quote (rule В18 above), DIRECT relevance and freshness
+        # a verbatim quote (rule B18 above), DIRECT relevance and freshness
         # (year ≥ 2015 or a review/meta-analysis). A relation without a quote is already dropped;
         # cautious default: if the NLI gave no relevance, treat as adjacent
         relevance = data.get("relevance")
@@ -182,7 +182,7 @@ def check(claim: str, lang: str = "ru") -> dict | None:
         src = articles[idx] if isinstance(idx, int) and 0 <= idx < len(articles) else articles[0]
         quote = (data.get("quote") or "").strip()
         if relation != "insufficient" and not quote:
-            return None  # without a verbatim quote the conclusion does not count (rule В18)
+            return None  # without a verbatim quote the conclusion does not count (rule B18)
         try:
             src_yr = int(str(src.get("year") or "0"))
         except ValueError:
@@ -199,5 +199,5 @@ def check(claim: str, lang: str = "ru") -> dict | None:
             "source": {"title": src["title"], "url": src["url"], "year": src["year"],
                        "kind": src.get("kind", "primary")},
         }
-    except Exception:  # noqa: BLE001 — optional layer: any error means silence
+    except Exception:  # noqa: BLE001: optional layer, any error means silence
         return None

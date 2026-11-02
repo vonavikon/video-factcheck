@@ -1,76 +1,76 @@
 ---
-product: video-factcheck — расширение факт-чека YouTube
-surface: боковая панель на странице видео + карта вердиктов на таймлайне
-mode: operate (по классификации impeccable: рабочий экран; амбиция = точность и сдержанность)
-color_strategy: restrained — нейтральная тёмная база + семантические цвета вердиктов
-scene: "Зритель вечером смотрит длинную лекцию или интервью в тёмной комнате. Панель — рабочий инструмент рядом с видео: она помогает разбирать речь, а не соревнуется с плеером за внимание."
+product: video-factcheck, a fact-check extension for YouTube
+surface: side panel on the video page + a verdict map on the timeline
+mode: "operate (per the impeccable classification: a working screen; the ambition = precision and restraint)"
+color_strategy: restrained, a neutral dark base + semantic verdict colors
+scene: "In the evening a viewer watches a long lecture or interview in a dark room. The panel is a working tool next to the video: it helps the viewer parse the speech instead of competing with the player for attention."
 tokens: tokens.json
-method: структура «реестры + спецификации» по agent-ready design system (designpub, E. Hörner); принципы Operate/Restrained и самопроверка калибровки — impeccable (pbakaus/impeccable v4.8)
+method: 'the "registers + specifications" structure per agent-ready design system (designpub, E. Hörner); the Operate/Restrained principles and the calibration self-check per impeccable (pbakaus/impeccable v4.8)'
 ---
 
-# design.md — общие правила и договорённости
+# design.md: general rules and conventions
 
-## Что это за мир
+## What this world is
 
-Тёмная, YouTube-нативная рабочая панель. Продукт живёт поверх чужого интерфейса (YouTube), поэтому стратегия — «свой инструмент в чужом доме»: узнаваемая типографика и фон, близкие к YouTube-тёмному, но собственная структура карточек и бейджей, которую YouTube не даёт. Ничего кричащего: единственный источник цвета — семантика вердиктов.
+A dark, YouTube-native working panel. The product lives on top of someone else's interface (YouTube), so the strategy is "our own tool in a borrowed house": familiar typography and a background close to YouTube's dark theme, plus a card and badge structure of our own that YouTube does not offer. Nothing loud: the only source of color is verdict semantics.
 
-Самопроверка калибровки (impeccable): типовой ИИ-вид «почти чёрный + один неон» здесь не прижился бы — у нас три семантических цвета работают как статусная система, а не украшение; нейтральная база тёплая (#16181d), не синевато-чёрная.
+Calibration self-check (impeccable): the typical AI look of "near-black + one neon" would not survive here. Our three semantic colors work as a status system, not decoration; the neutral base is warm (#16181d), not bluish black.
 
-## Цвет
+## Color
 
-Правила, помимо tokens.json:
+Rules on top of tokens.json:
 
-1. **Цвет в этом продукте делает работу, а не декорирует.** Зелёный, красный, жёлтый существуют только в значении вердикта (правда / ложно / странно) и нигде больше. Исключения: красный кнопки действия (YouTube-конвенция «подписаться»), синий знака #2F6FED (бренд, вне семантики вердиктов), зелёная галочка «видео проверено» на кнопке под видео (завершённость, та же система «зелёный = всё хорошо»), amber-пульс «прогон идёт» на свёрнутом кружке — это статус процесса, а не вердикт: токен `status.busy`, единственное значение иконки #ffd66e; жёлтый strange (#ffd666) для него не переиспользуется.
-2. **Вердикт-цвета — пары tint+fg** (светлая заливка + цветной текст), никогда сплошная заливка ярким. Пилюля бейджа = bg из `verdict.*.bg`, текст из `verdict.*.fg`.
-3. **Контраст:** текст на своих подложках ≥ 4.5:1 (AA). Muted-текст (#9aa0a6) на панели — только для служебного, не для содержательных утверждений.
-4. **Ссылки** — YouTube-синий #3ea6ff: свои по стилю, знакомые по платформе. Знак бренда #2F6FED ≠ #3ea6ff: знак — бренд, ссылки — платформа.
+1. **Color in this product does work, it does not decorate.** Green, red, and yellow exist only in the verdict sense (true / false / strange) and nowhere else. Exceptions: the red action button (the YouTube "subscribe" convention), the sign blue #2F6FED (brand, outside verdict semantics), the green "video checked" checkmark on the button under the video (completion, the same "green = all good" system), and the amber "run in progress" pulse on the collapsed dot. The pulse is a process status, not a verdict: the token is `status.busy`, the icon's single value is #ffd66e; the strange yellow (#ffd666) is not reused for it.
+2. **Verdict colors are tint+fg pairs** (a light fill + colored text), never a solid bright fill. The badge pill takes its bg from `verdict.*.bg` and its text from `verdict.*.fg`.
+3. **Contrast:** text on its own surfaces is at least 4.5:1 (AA). Muted text (#9aa0a6) on the panel is for service text only, not for substantive statements.
+4. **Links** use YouTube blue #3ea6ff: our own in style, familiar on the platform. The brand sign #2F6FED is not #3ea6ff: the sign is the brand, links belong to the platform.
 
-## Знак (логотип, v0.6)
+## The sign (logo, v0.6)
 
-«Кадр с галочкой» — скруглённая рамка кадра + галочка, синий #2F6FED (вариант D из четырёх концептов, выбор по ресёрчу жанра). Обоснование по ресёрчу жанра: у факт-чекинговых организаций нет play-щитов и луп; красный треугольник занят товарным знаком YouTube; зелёный/жёлтый зарезервированы за вердиктами — знак нейтральный. Посадки: иконки расширения 16/32/48/128 (жирный вариант для мелкой сетки), монохромный контур на кнопке под видео, цветной на свёрнутом кружке. Источники — design/logo/src/*.svg, превью — design/logo/preview.html.
+A "frame with a checkmark": a rounded video-frame outline plus a checkmark, blue #2F6FED (variant D of the four concepts, chosen by genre research). The genre research rationale: fact-checking organizations have no play-shields or magnifiers; the red triangle is taken by the YouTube trademark; green and yellow are reserved for verdicts, so the sign is neutral. Placements: extension icons 16/32/48/128 (a bold variant for the small grid), a monochrome outline on the button under the video, colored on the collapsed dot. Sources are design/logo/src/*.svg, the preview is design/logo/preview.html.
 
-## Состояние «непроверенное»
+## The "unchecked" state
 
-Класс «не проверено» визуально четвёртый и приглушённый (verdict.unchecked). Это принцип, не стилистика: непроверенное не должно выглядеть ни подтверждённым, ни опровергнутым (implied truth effect из исследования продукта). Дизайн обязан удерживать эту разницу читаемой с первого взгляда — в панели, на таймлайне и в счётчиках.
+The "not checked" class is visually a fourth, muted one (verdict.unchecked). This is a principle, not a styling choice: unchecked must not look either confirmed or refuted (the implied truth effect from product research). Design must keep this difference readable at a glance: in the panel, on the timeline, and in the counters.
 
-## Иерархия в карточке вердикта
+## Hierarchy inside a verdict card
 
-Порядок значимости: таймкод → вердикт-бейдж → утверждение → обоснование → источники. Пользователь сканирует ленту наискось за «красным»; всё, что мешает этому сканированию (рамки, иконки, крупные цитаты в теле карточки), — ошибка.
+Order of importance: timestamp → verdict badge → claim → explanation → sources. The user scans the feed diagonally for "red"; anything that gets in the way of that scan (borders, icons, large quotes inside the card body) is an error.
 
-## Единая колонка таймкодов (канон с 2026-10-29, v0.6.6)
+## One shared timestamp column (canon since 2026-10-29, v0.6.6)
 
-Строки транскрипта и карточки фактов стоят на одной вертикали: таймкод в колонке 46px с правым выравниванием (стена разрядов), левый край — 24px (12px карточки + 3+9px фон), текст строк и бейдж карточек начинаются на одной вертикали 77px. Таймкод кликабелен у каждой строки транскрипта, как в родной расшифровке. Ширина таймкода не плавает: переменная ширина («0:12» → «40:07») и отступы строк-продолжений ломали сканирование столбцом — прыжки устранены фиксацией колонки.
+Transcript lines and fact cards sit on one vertical: the timestamp in a 46px right-aligned column (a wall of digits), the left edge at 24px (12px of card + 3+9px of background), and the line text and the card badges start on the same 77px vertical. The timestamp is clickable on every transcript line, as in the native transcript. The timestamp width does not drift: variable width ("0:12" to "40:07") and continuation-line indents broke column scanning, so the jumps were removed by fixing the column.
 
-## Пилюли веса источников (канон с 2026-10-29, v0.6.8)
+## Source weight pills (canon since 2026-10-29, v0.6.8)
 
-Источники различаются силой, и это видно до клика: «наука» (рецензируемые журналы, PMC, препринты, .edu) — синяя пара научного блока (#17233a/#7ab3ff), «официальный» (госдомены, ВОЗ/ООН) — зелёная пара v-true (#1d3a24/#7bd88f). Пилюля 9px uppercase перед доменом, в научном блоке — полная подпись «научная статья». В списке источников научные и официальные стоят первыми. Пилюля — это метка класса источника, не вердикта: она не конкурирует с бейджами цветом состояний.
+Sources differ in strength, and that is visible before the click: "science" (peer-reviewed journals, PMC, preprints, .edu) gets the blue pair of the science block (#17233a/#7ab3ff), "official" (government domains, WHO/UN) gets the v-true green pair (#1d3a24/#7bd88f). The pill is 9px uppercase before the domain; in the science block the full label reads "scientific article". In the source list, science and official come first. The pill marks the source class, not a verdict: it does not compete with the badges through state colors.
 
-## Скруглённость (канон с 2026-10-28, ревью
+## Roundness (canon since 2026-10-28, review
 
-Принцип: **мягкими делаем объекты, жёсткими — связи**. Бейджи, счётчики, кнопка — пилюли (радиус = половина высоты); панель — 12px со всех сторон (плавающая карточка); фоны-состояния карточек (hover/текущая/новая) — врезки радиуса 8 с боковыми отступами 3px. Связи — 1px-разделители карточек, моно-таймкоды, сетка 12px — остаются прямыми: лента читается столбцом, а не набором конфет. Кружок 50% (свёрнутая панель, × на ней) — предельный случай пилюли: это объект, а не контейнер, поэтому запрет радиуса >16 на него не распространяется — запрет касается контейнеров. Запреты: вложенные радиусы, тени у карточек (тень — только у панели). Operate-строгость держат tint-пары, единственный вес 700 и плотная шкала — скругляем форму, не трогаем типографику.
+The principle: **objects are soft, connections are hard.** Badges, counters, and the button are pills (radius = half the height); the panel is 12px on all sides (a floating card); card state backgrounds (hover/current/new) are radius-8 insets with 3px side margins. Connections, the 1px card dividers, mono timestamps, and the 12px grid, stay straight: the feed reads as a column, not a set of candies. The 50% dot (the collapsed panel with its ×) is the limiting case of a pill: it is an object, not a container, so the radius >16 ban does not apply to it; the ban targets containers. Bans: nested radii, shadows on cards (a shadow belongs to the panel alone). Operate strictness is held by the tint pairs, the single 700 weight, and the tight type scale: we round the shape and leave the typography alone.
 
-## Композиция панели
+## Panel composition
 
-- Ширина 340px, плавающая карточка (right 16px, радиус 12px со всех сторон, паттерн conspect). По умолчанию панель СКРЫТА — вход через кнопку под видео или иконку тулбара; авто-открытие только при возобновлении живого прогона. Панель не перекрывает видео: если ширина окна < ~1100px, панель сужается до 300px (язычок — итерация 2).
-- Режимы: hidden / mini (кружок 52px — морф той же панели, знак + пульс прогона + × на ховере) / full. Клик по кружку разворачивает, × скрывает целиком.
-- Вертикальный ритм: шапка → статус-строка → счётчики → лента. Лента — единственная скроллируемая область.
-- Текущая (синхронная просмотру) карточка подсвечивается фоном `panel_highlight` без изменения размеров — подсветка не должна двигать ленту.
+- Width 340px, a floating card (right 16px, radius 12px on all sides, the conspect pattern). By default the panel is HIDDEN; entry is through the button under the video or the toolbar icon, and auto-open happens only when a live run resumes. The panel never covers the video: if the window is narrower than ~1100px, the panel shrinks to 300px (the tongue is iteration 2).
+- Modes: hidden / mini (a 52px dot, a morph of the same panel: sign + run pulse + × on hover) / full. A click on the dot expands it; × hides it completely.
+- Vertical rhythm: header → status line → counters → feed. The feed is the only scrollable area.
+- The current card (in sync with playback) is highlighted with the `panel_highlight` background without changing size: the highlight must not move the feed.
 
-## Движение
+## Motion
 
-Шкала длительностей: **120 / 160 / 180 / 280 ms**. 120 — все ховеры и подсветки (единый темп), 160 — выезд панели, 180 — прибытие вердикта, 280 — морф в кружок (width/max-height/border-radius, easing cubic-bezier(.2,.8,.3,1)): это переход формы, а не внимания. Промежуточные значения (поповер 140, × на кружке 150, фейд скрытия 130) живут рядом со шкалой, новых ступеней не плодить. Пульсы — единственные бесконечные и живут только во время прогона: спиннер 900ms, ободок кнопки и скелетоны 1200ms, пульс кружка 1800ms. Вердикты прибывают во время просмотра — анимация обязана быть заметной в периферии и не отвлекать от речи (см. verdict-stream.pattern.md).
+Duration scale: **120 / 160 / 180 / 280 ms**. 120 for all hovers and highlights (one tempo), 160 for the panel slide-in, 180 for verdict arrival, 280 for the morph into the dot (width/max-height/border-radius, easing cubic-bezier(.2,.8,.3,1)): a transition of shape, not of attention. Intermediate values (popover 140, × on the dot 150, hide fade 130) live next to the scale; do not grow new steps. Pulses are the only infinite animations and live only during a run: the spinner 900ms, the button ring and skeletons 1200ms, the dot pulse 1800ms. Verdicts arrive during viewing: the animation must be noticeable in peripheral vision and must not pull attention from the speech (see verdict-stream.pattern.md).
 
-## Тон текстов
+## Text tone
 
-Короткие формулировки без канцелярита и без обвинительного пафоса: «странно», а не «вводит в заблуждение»; «не проверено», а не «непроверяемое». Обоснование — одна строка, на языке пользователя. Это продуктовое правило из исследования, дизайн его поддерживает (обрезка до 2 строк с раскрытием).
+Short wording with no officialese and no accusatory pathos: "unclear" rather than "misleading"; "not checked" rather than "unverifiable". The explanation is one line, in the user's language. This is a product rule from research; design supports it (clamping to 2 lines with an expand).
 
-## Доступность
+## Accessibility
 
-- Все интерактивные элементы с клавиатуры: панель — tabindex, карточки — фокус, таймкоды — ссылки.
-- Hit-area таймкода ≥ 32px по высоте (сейчас ссылка узкая — доработать).
-- Цвет вердикта дублируется текстом в бейдже (не только цветом).
-- prefers-reduced-motion: все анимации отключаются/замедляются, морф панели мгновенный.
+- Every interactive element works from the keyboard: the panel via tabindex, cards take focus, timestamps are links.
+- The timestamp hit area is at least 32px tall (today the link is narrow; to be fixed).
+- The verdict color is doubled by text in the badge (not color alone).
+- prefers-reduced-motion: all animations turn off or slow down; the panel morph is instant.
 
-## Границы мира
+## World boundaries
 
-Панель рендерится в shadow DOM — стили YouTube не влияют и наоборот. Всё, что живёт на самой странице (сегменты таймлайна), обязано переживать перерисовку плеера YouTube (паттерн SponsorBlock: сегменты — overlay поверх прогресс-бара, не его часть). Втягивать в панель чужие шрифты и картинки нельзя: только системный стек и вектор, вес расширения минимален.
+The panel renders in a shadow DOM: YouTube styles do not reach it and vice versa. Everything that lives on the page itself (timeline segments) must survive YouTube player redraws (the SponsorBlock pattern: segments are an overlay over the progress bar, not part of it). The panel must not pull in third-party fonts or images: the system font stack and vectors only, so the extension stays lightweight.

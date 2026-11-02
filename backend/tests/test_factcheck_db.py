@@ -37,7 +37,7 @@ def test_match_with_human_verdict(monkeypatch):
 
 
 def test_low_similarity_rejected(monkeypatch):
-    """Similar words are present, but the claim is about something else — the layer must not lie with a false hit."""
+    """Similar words are present, but the claim is about something else; the layer must not lie with a false hit."""
     monkeypatch.setenv("VFC_FACTCHECK_KEY", "AIzaFake")
     payload = {"claims": [{
         "text": "China invented the paper and gunpowder centuries ago",
@@ -52,7 +52,7 @@ def test_ru_rating_mapping():
     assert fc._map_rating("Ложь")[0] == "ложно"
     assert fc._map_rating("Правда")[0] == "правда"
     assert fc._map_rating("Вводит в заблуждение")[0] == "странно"
-    assert fc._map_rating("Сложно сказать")[0] == "странно"  # unfamiliar scale — cautious
+    assert fc._map_rating("Сложно сказать")[0] == "странно"  # unfamiliar scale, cautious
 
 
 def test_api_error_returns_none(monkeypatch):

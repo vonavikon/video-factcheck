@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![tests](https://github.com/vonavikon/video-factcheck/actions/workflows/tests.yml/badge.svg)](https://github.com/vonavikon/video-factcheck/actions/workflows/tests.yml)
 
-[RU](README.md) · [EN](README.en.md) · **中文** · [Español](README.es.md) · [Français](README.fr.md)
+[RU](README.ru.md) · [EN](README.md) · **中文** · [Español](README.es.md) · [Français](README.fr.md)
 
 一款 Chrome 扩展（MV3），在你观看 YouTube 视频的同时做事实核查。扩展直接从页面读取字幕，服务器从中提取出可核查的论断并标注时间点，逐条核查（对照人工事实核查记录、网页搜索和科学文献），然后在播放器旁的面板里给出「属实 / 虚假 / 存疑」的判定。点击时间点跳转到论断出现的时刻；每条判定都附带来源和逐字引文。
 

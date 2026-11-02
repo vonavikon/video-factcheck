@@ -2,7 +2,7 @@
 
 The first and cheapest verdict layer: if the claim has already been checked by humans
 (Politifact, Snopes, AFP, «Проверено.медиа»), we show their verdict with the outlet's
-attribution — no LLM involved at all. Decision В12 (live API; a local dump is planned for iteration 2).
+attribution and no LLM involved at all. Decision B12 (live API; a local dump is planned for iteration 2).
 
 Key: VFC_FACTCHECK_KEY (Google Cloud API key, starts with AIza). If the key is missing or
 the API is unreachable, the layer is silently skipped and the sonar layer takes over.
@@ -33,7 +33,7 @@ def _map_rating(rating: str) -> tuple[str, str]:
     for verdict, pattern in RATING_RE:
         if re.search(pattern, r):
             return verdict, ""
-    # unfamiliar outlet scale — show as is, classify cautiously
+    # unfamiliar outlet scale: show as is, classify cautiously
     return "странно", f"оригинальный вердикт: «{rating}»"
 
 
@@ -49,7 +49,7 @@ def match(claim: str, lang: str = "ru") -> dict | None:
         if r.status_code != 200:
             return None
         data = r.json()
-    except Exception:  # noqa: BLE001 — optional layer, a failure does not break the pipeline
+    except Exception:  # noqa: BLE001: optional layer, a failure does not break the pipeline
         return None
 
     best = None

@@ -1,4 +1,4 @@
-"""CLI: start the extension server — `vfc serve`. Check a single video — `vfc check <url>`."""
+"""CLI: start the extension server with `vfc serve`; check a single video with `vfc check <url>`."""
 import argparse
 import sys
 

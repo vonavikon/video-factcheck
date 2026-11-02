@@ -1,11 +1,11 @@
-"""Stages 3–4 (merged): search + verdict via Perplexity sonar (bothub).
+"""Stages 3-4 (merged): search + verdict via Perplexity sonar (bothub).
 
-Sonar runs web search on its side and answers with source citations —
-no external search API needed (Bing degrades without JS, DDG blocks bots,
-Google requires JS; decision recorded in В14).
+Sonar runs web search on its side and answers with source citations,
+so no external search API is needed (Bing degrades without JS, DDG blocks bots,
+Google requires JS; decision recorded in B14).
 
-Two sonar passes (search is non-deterministic — the passes really differ);
-verdict disagreement → "странно" (В16). A quote is mandatory (В18).
+Two sonar passes (search is non-deterministic, the passes really differ);
+verdict disagreement → "странно" (B16). A quote is mandatory (B18).
 """
 import os
 
@@ -33,7 +33,7 @@ PROMPT = """Ты — факт-чекер с доступом к веб-поис�
 {"verdict":"...","why":"...","sources":[{"title":"...","url":"...","quote":"..."}]}
 """
 
-# justification language substitution: verdict values ("правда"…) stay Russian —
+# justification language substitution: verdict values ("правда"…) stay Russian:
 # this is the server's internal contract, the client translates for display (verdictLabel)
 LANG_WHY = {
     "ru": "why: одно предложение на русском для показа пользователю",
@@ -57,7 +57,7 @@ def check(claim: str, lang: str = "ru", passes: int = 2, title: str = "") -> dic
         )
         try:
             data = llm.parse_json(text)
-        except Exception:  # noqa: BLE001 — broken JSON = failed pass
+        except Exception:  # noqa: BLE001: broken JSON = failed pass
             verdicts.append("странно")
             whys.append("Модель вернула нечитаемый ответ")
             sources_by_pass.append([])
@@ -83,11 +83,11 @@ def _confidence(passes: list[str], votes: list[dict]) -> str:
     Honest levels instead of pseudo-precise percentages (research: a single score
     is unvalidated; FactScore: even GPT-4 gets ~27% of atomic facts wrong).
     Formula:
-      base 0.6 — both sonar passes agreed on the verdict (disagreement → "странно")
-      +0.25   — ≥2 sources with quotes and average trust ≥0.7    → "высокая"
-      +0.15   — sources exist with average trust ≥0.5            → "средняя"
-      −0.05   — only weak sources (average <0.5)
-      −0.15   — no sources at all
+      base 0.6 = both sonar passes agreed on the verdict (disagreement → "странно")
+      +0.25   = ≥2 sources with quotes and average trust ≥0.7    → "высокая"
+      +0.15   = sources exist with average trust ≥0.5            → "средняя"
+      −0.05   = only weak sources (average <0.5)
+      −0.15   = no sources at all
     result: ≥0.8 "высокая", ≥0.6 "средняя", otherwise "низкая".
     """
     if len(set(passes)) > 1:
@@ -108,7 +108,7 @@ def _confidence(passes: list[str], votes: list[dict]) -> str:
 
 
 def _safe_url(url: str) -> str | None:
-    """http(s) and a valid domain only: protection against javascript: injections via the LLM (СЕК-1)."""
+    """http(s) and a valid domain only: protection against javascript: injections via the LLM (SEC-1)."""
     from urllib.parse import urlparse
     import re
     try:
@@ -125,7 +125,7 @@ def _safe_url(url: str) -> str | None:
 def _votes(sources_by_pass: list[list[dict]]) -> list[dict]:
     """Sources of the best pass (the first with a non-empty list), with trust weights.
 
-    Rule В18 enforced in code, not just in the prompt: a source without a verbatim
+    Rule B18 enforced in code, not just in the prompt: a source without a verbatim
     quote is not included (the model could have invented it).
     """
     best = next((s for s in sources_by_pass if s), [])
@@ -164,11 +164,11 @@ def _result(verdict: str, why: str, votes: list[dict], passes: list[str]) -> dic
 
 
 def fuse(result: dict, lang: str = "ru") -> dict:
-    """Science's influence on the verdict — step 2 of the dilemma.
+    """Science's influence on the verdict, step 2 of the dilemma.
 
     Guards are already computed in plausibility.influential (verbatim quote +
     directly_on_topic + year ≥ 2015 or a review/meta-analysis). Epistemics:
-    science NEVER issues "ложно" — a conflict with sonar downgrades the verdict
+    science NEVER issues "ложно"; a conflict with sonar downgrades the verdict
     to "странно" with confidence "низкая" and a glued justification.
     A "правда"+supports return does not raise confidence until calibrated
     on the golden set (a future bayesian-accumulator iteration).

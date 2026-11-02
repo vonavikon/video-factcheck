@@ -14,5 +14,5 @@ skills-lock.json
 
 .agent-teams/
 
-# runtime artifacts (создаёт сервер/тесты)
+# runtime artifacts (created by the server/tests)
 data/

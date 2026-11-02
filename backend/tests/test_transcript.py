@@ -63,7 +63,7 @@ def test_segments_gap_split():
 
 
 def test_playlist_guard(monkeypatch):
-    """Scenario CV-TR-01: yt-dlp returned several entries (a playlist) — an honest refusal."""
+    """Scenario CV-TR-01: yt-dlp returned several entries (a playlist); an honest refusal."""
     class FakeProc:
         returncode = 0
         stdout = "id1|||t1|||10\nid2|||t2|||20\n"
@@ -92,7 +92,7 @@ def _fake_ytdlp(monkeypatch, results):
 
 
 def test_no_subs_when_ytdlp_clean(tmp_path, monkeypatch):
-    """yt-dlp exited cleanly but no sub files appeared — "no subtitles"."""
+    """yt-dlp exited cleanly but no sub files appeared: "no subtitles"."""
     monkeypatch.setattr(tr.config, "DATA_DIR", tmp_path)
     _fake_ytdlp(monkeypatch, [
         _Proc(stdout="vid1|||title|||10\n"),  # metadata
@@ -107,7 +107,7 @@ def test_no_subs_when_ytdlp_clean(tmp_path, monkeypatch):
 
 def test_download_error_on_429(tmp_path, monkeypatch):
     """Bug scenario 2026-10-28: timed_text returns 429 from a datacenter IP.
-    This is a download failure, not "the video has no subtitles" — and the
+    This is a download failure, not "the video has no subtitles", and the
     message hints at the client path (the button on the video page)."""
     monkeypatch.setattr(tr.config, "DATA_DIR", tmp_path)
     _fake_ytdlp(monkeypatch, [
@@ -136,7 +136,7 @@ def test_download_error_on_ytdlp_exit(tmp_path, monkeypatch):
 
 
 def test_client_transcript_used_as_is(tmp_path, monkeypatch):
-    """Task 2: a client transcript is not overwritten — tr.fetch is never called,
+    """Task 2: a client transcript is not overwritten; tr.fetch is never called,
     exactly the client subs end up in storage."""
     from videofactcheck import claims as claims_mod, pipeline, store
 

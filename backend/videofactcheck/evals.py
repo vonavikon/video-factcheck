@@ -1,1 +1,1 @@
-"""evals — implementation pending until decisions are finalized."""
+"""evals: implementation pending until decisions are finalized."""

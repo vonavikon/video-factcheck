@@ -1,3 +1,3 @@
-# Зависимости разработки: тесты и всё, что нужно CI.
+# Development dependencies: tests and everything CI needs.
 -r requirements.txt
 pytest

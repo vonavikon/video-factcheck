@@ -1,7 +1,7 @@
-"""A thin LLM provider abstraction (decision В9): OpenAI-compatible chat.
+"""A thin LLM provider abstraction (decision B9): OpenAI-compatible chat.
 
 Works with bothub (deepseek-v4-flash) and any OpenAI-compatible endpoint
-(OpenRouter, Selectel) by changing VFC_LLM_BASE_URL/KEY/MODEL — no code changes needed.
+(OpenRouter, Selectel) by changing VFC_LLM_BASE_URL/KEY/MODEL; no code changes needed.
 """
 import json
 import re
@@ -54,14 +54,14 @@ def chat(
                 continue
             try:
                 data = resp.json()
-            except Exception as e:  # broken JSON response — also retried (review P1-3)
+            except Exception as e:  # broken JSON response, also retried (review P1-3)
                 last_err = f"битый JSON ответа: {e}"
                 from . import tracing
                 tracing.log_generation(name="llm", model=body["model"], prompt_tail=messages,
                                        output=None, error=last_err)
                 time.sleep(2 * (attempt + 1))
                 continue
-        except httpx.TransportError as e:  # ConnectError/ReadTimeout — retried so no batch is lost (review P1-3)
+        except httpx.TransportError as e:  # ConnectError/ReadTimeout, retried so no batch is lost (review P1-3)
             last_err = f"транспорт: {type(e).__name__}: {e}"
             from . import tracing
             tracing.log_generation(name="llm", model=body["model"], prompt_tail=messages,

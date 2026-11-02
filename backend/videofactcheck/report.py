@@ -1,1 +1,1 @@
-"""report — implementation pending until decisions are finalized."""
+"""report: implementation pending until decisions are finalized."""

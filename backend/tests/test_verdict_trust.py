@@ -1,4 +1,4 @@
-"""Scenarios for stages 4–5: verdict voting, the quote rule, domain trust."""
+"""Scenarios for stages 4-5: verdict voting, the quote rule, domain trust."""
 from videofactcheck import verdict as ve
 from videofactcheck import trust
 
@@ -21,7 +21,7 @@ def test_passes_disagree_gives_strange(monkeypatch):
 
 
 def test_vote_without_quote_not_counted(monkeypatch):
-    """В18: a support without a quote does not count as a source."""
+    """B18: a support without a quote does not count as a source."""
     import json
     def fake_chat(messages, **kw):
         src = {"title": "T", "url": "https://reuters.com/a", "quote": ""}
@@ -29,7 +29,7 @@ def test_vote_without_quote_not_counted(monkeypatch):
                            "sources": [src]}, ensure_ascii=False)
     monkeypatch.setattr(ve.llm, "chat", fake_chat)
     res = ve.check("утверждение", "ru")
-    assert res["votes"] == []  # no quote — no vote
+    assert res["votes"] == []  # no quote, no vote
 
 
 def test_no_sources_is_strange(monkeypatch):

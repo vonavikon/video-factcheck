@@ -41,12 +41,12 @@ def _run(run_id: str, url: str, transcript: dict | None = None, install_id: str 
             store.save_transcript(t)
 
             # Pipeline: ClaimReview is
-            # free and instant — it checks claims as extraction batches finish,
+            # free and instant, it checks claims as extraction batches finish,
             # not after extraction. The first "Проверено людьми" cards arrive
             # with the first batches. sonar stays after extraction:
             # its slots are distributed by timeline stratification (43-min feedback).
             hit_hashes: set[str] = set()
-            checked = 0  # issued verdicts (by fact-checkers or sonar) — goes into summary;
+            checked = 0  # issued verdicts (by fact-checkers or sonar), goes into summary;
             # declared before on_batch: the pipeline increments it during extraction
 
             def on_batch(batch_claims) -> None:
@@ -54,7 +54,7 @@ def _run(run_id: str, url: str, transcript: dict | None = None, install_id: str 
                 vlang = verdict_lang or t["lang"]
                 for c in batch_claims:
                     if c["hash"] in hit_hashes:
-                        continue  # batches arrive pre-dedup — the same claim may come twice
+                        continue  # batches arrive pre-dedup; the same claim may come twice
                     human = factcheck_db.match(c["claim"], lang=vlang)
                     if human:
                         store.save_claim(run_id, c, human)
@@ -77,14 +77,14 @@ def _run(run_id: str, url: str, transcript: dict | None = None, install_id: str 
             todo = len(todo_ids)
             # pay-per-use: machine verdicts are capped by the installation budget
             paid = 0
-            # СЕК-3: without install_id — an anonymous quota (not unlimited); VFC_DEV_UNLIMITED=1 for development
+            # SEC-3: without install_id, an anonymous quota (not unlimited); VFC_DEV_UNLIMITED=1 for development
             budget_left = (store.budget(install_id) if install_id else store.FREE_DAILY) \
                 if _os.environ.get("VFC_DEV_UNLIMITED", "") != "1" else 10**9
 
             with tracing.span("verdicts", {"todo": todo}):
-                # Layer 1 (ClaimReview) is cheap — runs on all selected claims. Layer 2 (sonar,
-                # 10–20s per verdict) gets a pre-allocated budget: no more than
-                # budget_left claims enter the pool, workers never touch the budget — no lock needed.
+                # Layer 1 (ClaimReview) is cheap, runs on all selected claims. Layer 2 (sonar,
+                # 10-20s per verdict) gets a pre-allocated budget: no more than
+                # budget_left claims enter the pool, workers never touch the budget, no lock needed.
                 need_sonar = []
                 for c in claims_list:
                     if c["hash"] not in todo_ids:
@@ -106,7 +106,7 @@ def _run(run_id: str, url: str, transcript: dict | None = None, install_id: str 
                     # in the transcript language (claims are quoted in the original)
                     return verdict_mod.check(c["claim"], verdict_lang or t["lang"], title=t["title"])
 
-                # Stage 2.5 — scientific plausibility (indirect evidence,
+                # Stage 2.5, scientific plausibility (indirect evidence,
                 # free), runs in parallel with sonar (2 workers) and is usually
                 # done by the time the sonar verdict is ready. Attached to result as plausibility.
                 plaus_futs: dict = {}
@@ -117,9 +117,9 @@ def _run(run_id: str, url: str, transcript: dict | None = None, install_id: str 
                         plaus_futs[c["hash"]] = plaus_pool.submit(
                             plaus_mod.check, c["claim"], verdict_lang or t["lang"])
 
-                # Verdicts — 3 at a time: the sequential loop was the run's main
+                # Verdicts, 3 at a time: the sequential loop was the run's main
                 # bottleneck. Writes and counters are owned by the main thread
-                # (as_completed), workers only compute — no shared mutable state.
+                # (as_completed), workers only compute, no shared mutable state.
                 try:
                     with ThreadPoolExecutor(max_workers=3) as ex:
                         futures = {ex.submit(run_sonar, c): c for c in need_sonar}
@@ -130,10 +130,10 @@ def _run(run_id: str, url: str, transcript: dict | None = None, install_id: str 
                                 result = fut.result()
                                 paid += 1
                                 checked += 1
-                            except Exception as sonar_err:  # noqa: BLE001 — one claim must not kill everything
+                            except Exception as sonar_err:  # noqa: BLE001: one claim must not kill everything
                                 print(f"[pipeline:warn] sonar failed для {c['hash'][:8]}: {sonar_err}")
                                 result = None
-                            # indirect scientific evidence — into the verdict card
+                            # indirect scientific evidence, into the verdict card
                             pf = plaus_futs.get(c["hash"])
                             if pf is not None:
                                 try:
@@ -141,10 +141,10 @@ def _run(run_id: str, url: str, transcript: dict | None = None, install_id: str 
                                     if p and result is not None:
                                         result = dict(result)
                                         result["plausibility"] = p
-                                        # dilemma step 2: guards passed — science
+                                        # dilemma step 2: guards passed, science
                                         # downgrades the conflicting verdict (not "ложно")
                                         result = verdict_mod.fuse(result, verdict_lang or t["lang"])
-                                except Exception:  # noqa: BLE001 — plausibility is not critical
+                                except Exception:  # noqa: BLE001: plausibility is not critical
                                     pass
                             store.save_claim(run_id, c, _with_meta(c, result))  # as they become ready
                             finished += 1
@@ -162,7 +162,7 @@ def _run(run_id: str, url: str, transcript: dict | None = None, install_id: str 
                 summary=_summary(run_id, t, claims_list, extracted["skipped"], checked,
                                  no_claims=no_claims))
             tracing.flush()
-        except Exception as e:  # noqa: BLE001 — background thread, the error goes into status
+        except Exception as e:  # noqa: BLE001: background thread, the error goes into status
             store.update_run(run_id, status="error", error=_public_error(e))
             with tracing.span("error", {"error": str(e)[:300]}):
                 pass
@@ -170,7 +170,7 @@ def _run(run_id: str, url: str, transcript: dict | None = None, install_id: str 
 
 
 def _with_meta(c: dict, result: dict | None) -> dict | None:
-    """Extraction metadata (significance, numeric fields) — into the result JSON:
+    """Extraction metadata (significance, numeric fields), into the result JSON:
     this way the golden export and analytics see them from the DB (verification risk 3, 29.10)."""
     if result is None:
         result = {}
@@ -183,9 +183,9 @@ def _with_meta(c: dict, result: dict | None) -> dict | None:
 
 
 def _public_error(e: Exception) -> str:
-    """СЕК-8: the status gets a clean reason, without stderr/paths/keys; the raw one goes to the server log.
+    """SEC-8: the status gets a clean reason, without stderr/paths/keys; the raw one goes to the server log.
     A whitelist of our own RuntimeError messages (review P1-4): the substring filter
-    "yt-dlp" let through str(TimeoutExpired) with the full argv — including proxy credentials."""
+    "yt-dlp" let through str(TimeoutExpired) with the full argv, including proxy credentials."""
     import sys
     raw = str(e)
     print(f"[pipeline:err] run failed: {raw[:500]}", file=sys.stderr)
@@ -201,7 +201,7 @@ def _public_error(e: Exception) -> str:
 def _select_for_verdicts(claims: list[dict], k: int) -> list[dict]:
     """The money budget is spread evenly across the timeline: for a long video the
     checked claims must cover the whole video, not the first minutes
-    (log finding 2026-10-28: a 43-min video had all claims within 0–206s)."""
+    (log finding 2026-10-28: a 43-min video had all claims within 0-206s)."""
     if len(claims) <= k:
         return claims
     claims = sorted(claims, key=lambda c: c["t_start"])

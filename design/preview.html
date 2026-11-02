@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>video-factcheck — превью панели, все состояния (синхронизировано с extension/content.js v0.6.2)</title>
+<title>video-factcheck: panel preview, all states (texts per extension/content.js, en)</title>
 <style>
   body { background: #0f0f0f; color: #e8e8e8; font: 14px/1.5 Roboto, "Segoe UI", system-ui, sans-serif; margin: 0; padding: 24px; }
   h1 { font-size: 18px; font-weight: 500; margin: 0 0 4px; }
@@ -83,123 +83,123 @@
 </style>
 </head>
 <body>
-<h1>video-factcheck — все состояния панели</h1>
-<div class="sub">v0.6.2: панель — плавающая карточка r12 со всех сторон, тень 0 4px 16px; шапка — сервер-строка, профиль, «↓ .md», «−», «×»; лента «Текст/Факты». Скруглённый язык «мягкие объекты, жёсткие связи» (reviews/2026-10-28-screens.md), токены — design/tokens.json</div>
+<h1>video-factcheck: all panel states</h1>
+<div class="sub">v0.9.1: the panel is a floating r12 card with a 0 4px 16px shadow; the header holds the server line, profile, "↓ .md", "−", "×"; feed tabs "Text/Facts". Soft shapes, hard links (reviews/2026-10-28-screens.md), tokens in design/tokens.json</div>
 
 <div class="row">
   <div><div class="panel">
-    <div class="head"><div class="tt"><b>Факт-чек <span class="ver">v0.9.1</span></b><span class="sub up"><i class="dot"></i>сервер на связи</span></div><span class="spacer"></span><button class="run">Проверить видео</button><button class="profile" title="Личный кабинет"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="fold">−</button><button class="fold close">×</button></div>
-    <div class="status"><span>Нажми «Проверить видео», чтобы начать</span></div>
-    <div class="feed"><div class="idlebox"><div class="legend"><span class="lg"><i style="background:#7bd88f"></i>правда</span><span class="lg"><i style="background:#ff8a80"></i>ложно</span><span class="lg"><i style="background:#ffd666"></i>странно</span></div><div class="idlebal">свободно сегодня: 10 · кредиты: 32</div></div></div>
-  </div><p class="cap">idle · легенда вердиктов + строка баланса</p></div>
+    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.9.1</span></b><span class="sub up"><i class="dot"></i>server is up</span></div><span class="spacer"></span><button class="run">Check video</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="fold">−</button><button class="fold close">×</button></div>
+    <div class="status"><span>Click "Check video" to start</span></div>
+    <div class="feed"><div class="idlebox"><div class="legend"><span class="lg"><i style="background:#7bd88f"></i>true</span><span class="lg"><i style="background:#ff8a80"></i>false</span><span class="lg"><i style="background:#ffd666"></i>unclear</span></div><div class="idlebal">free today: 10 · credits: 32</div></div></div>
+  </div><p class="cap">idle · verdict legend + balance line</p></div>
 
   <div><div class="panel">
-    <div class="head"><div class="tt"><b>Факт-чек <span class="ver">v0.9.1</span></b><span class="sub up"><i class="dot"></i>сервер на связи</span></div><span class="spacer"></span><button class="run dis">Проверяю…</button><button class="profile" title="Личный кабинет"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="fold">−</button><button class="fold close">×</button></div>
-    <div class="status"><div class="spin"></div><span>ищу утверждения: 8/29</span></div>
-    <div class="feedtabs"><button class="ftab active">Текст</button><button class="ftab">Факты</button></div>
+    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.9.1</span></b><span class="sub up"><i class="dot"></i>server is up</span></div><span class="spacer"></span><button class="run dis">Checking…</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="fold">−</button><button class="fold close">×</button></div>
+    <div class="status"><div class="spin"></div><span>Finding claims: 8/29</span></div>
+    <div class="feedtabs"><button class="ftab active">Text</button><button class="ftab">Facts</button></div>
     <div class="feed">
-      <div class="tgroup"><div class="tline"><span class="ts">0:12</span><span class="ttext">Мы с коллегами много лет изучаем массовые вымирания…</span></div><div class="tline cont"><span class="ttext">…и сегодня я расскажу о пяти самых крупных из них.</span></div></div>
-      <div class="tgroup"><div class="tline"><span class="ts">0:44</span><span class="ttext">Первое и самое известное — пермское вымирание, оно стёрло почти всё…</span></div></div>
-      <div class="tmore">··· ещё 14 фрагментов</div>
+      <div class="tgroup"><div class="tline"><span class="ts">0:12</span><span class="ttext">My colleagues and I have spent years studying mass extinctions…</span></div><div class="tline cont"><span class="ttext">…and today I will talk about the five biggest ones.</span></div></div>
+      <div class="tgroup"><div class="tline"><span class="ts">0:44</span><span class="ttext">The first and the best known is the Permian extinction, it wiped out nearly everything…</span></div></div>
+      <div class="tmore">··· 14 more fragments</div>
     </div>
-  </div><p class="cap">running · транскрипт стримится сразу (фича A), группы 30с, «··· ещё N»</p></div>
+  </div><p class="cap">running · the transcript streams immediately, 30s groups, "··· N more"</p></div>
 
   <div><div class="panel">
-    <div class="head"><div class="tt"><b>Факт-чек <span class="ver">v0.9.1</span></b><span class="sub up"><i class="dot"></i>сервер на связи</span></div><span class="spacer"></span><button class="run dis">Проверяю…</button><button class="profile" title="Личный кабинет"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="dl" title="Скачать .md">↓</button><button class="fold">−</button><button class="fold close">×</button></div>
-    <div class="status"><div class="spin"></div><span>проверяю утверждения: 3/15 · 1:24 · <a class="skip" href="#">не ждать</a></span></div>
-    <div class="feedtabs"><button class="ftab active">Текст</button><button class="ftab">Факты</button></div>
+    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.9.1</span></b><span class="sub up"><i class="dot"></i>server is up</span></div><span class="spacer"></span><button class="run dis">Checking…</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="dl" title="Download .md">↓</button><button class="fold">−</button><button class="fold close">×</button></div>
+    <div class="status"><div class="spin"></div><span>Checking claims: 3/15 · 1:24 · <a class="skip" href="#">skip waiting</a></span></div>
+    <div class="feedtabs"><button class="ftab active">Text</button><button class="ftab">Facts</button></div>
     <div class="feed">
       <div class="tgroup">
-        <div class="tline"><span class="ts">0:23</span><span class="ttext">…на Земле произошло пять массовых вымираний…</span></div>
-        <div class="card"><div class="statebg"><div class="row1"><a class="ts" href="#">0:23</a><span class="badge v-true">правда</span><span class="conf" style="color:#7bd88f"><span class="segs"><i class="on"></i><i class="on"></i><i class="on"></i></span><span class="lvl">высокая</span></span></div>
-          <div class="claim">На Земле произошло пять массовых вымираний.</div>
-          <div class="why">Палеонтологическая летопись фиксирует пять «большой пятерки» событий.</div>
+        <div class="tline"><span class="ts">0:23</span><span class="ttext">…there have been five mass extinctions on Earth…</span></div>
+        <div class="card"><div class="statebg"><div class="row1"><a class="ts" href="#">0:23</a><span class="badge v-true">true</span><span class="conf" style="color:#7bd88f"><span class="segs"><i class="on"></i><i class="on"></i><i class="on"></i></span><span class="lvl">high</span></span></div>
+          <div class="claim">There have been five mass extinctions on Earth.</div>
+          <div class="why">The paleontological record documents the Big Five events.</div>
           <div class="srcs"><a href="#">wikipedia.org</a><a href="#">britannica.com</a></div></div></div>
       </div>
       <div class="tgroup">
-        <div class="tline"><span class="ts">0:27</span><span class="ttext">…каждое уничтожало минимум три четверти видов…</span></div>
-        <div class="card now"><div class="statebg"><div class="row1"><a class="ts" href="#">0:27</a><span class="badge v-false">ложно</span><span class="conf" style="color:#ffd666"><span class="segs"><i class="on"></i><i class="on"></i><i></i></span><span class="lvl">средняя</span></span></div>
-          <div class="claim">Каждое из пяти массовых вымираний уничтожало минимум три четверти видов.</div>
-          <div class="why">Порог «большой пятерки» — 75% морских видов, не все события его достигли.</div>
-          <div class="srcs"><a href="#">nature.com</a><a href="#">smithsonianmag.com</a><span class="more">ещё 2</span></div></div></div>
+        <div class="tline"><span class="ts">0:27</span><span class="ttext">…each one wiped out at least three quarters of species…</span></div>
+        <div class="card now"><div class="statebg"><div class="row1"><a class="ts" href="#">0:27</a><span class="badge v-false">false</span><span class="conf" style="color:#ffd666"><span class="segs"><i class="on"></i><i class="on"></i><i></i></span><span class="lvl">medium</span></span></div>
+          <div class="claim">Each of the five mass extinctions wiped out at least three quarters of species.</div>
+          <div class="why">The Big Five threshold is 75% of marine species; not every event reached it.</div>
+          <div class="srcs"><a href="#">nature.com</a><a href="#">smithsonianmag.com</a><span class="more">2 more</span></div></div></div>
       </div>
-      <div class="tmore">··· ещё 12 фрагментов</div>
+      <div class="tmore">··· 12 more fragments</div>
     </div>
-  </div><p class="cap">running · вердикты встают в транскрипт по таймкоду, текущая подсвечена рейкой</p></div>
+  </div><p class="cap">running · verdicts land in the transcript by timestamp, the current card is highlighted</p></div>
 </div>
 
 <div class="row">
   <div><div class="panel">
-    <div class="head"><div class="tt"><b>Факт-чек <span class="ver">v0.9.1</span></b><span class="sub up"><i class="dot"></i>сервер на связи</span></div><span class="spacer"></span><button class="run" style="display:none">Проверить заново</button><button class="profile" title="Личный кабинет"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="dl" title="Скачать .md">↓</button><button class="fold">−</button><button class="fold close">×</button></div>
-    <div class="status"><span>Готово · правда 4 · ложно 1 · странно 1</span></div>
-    <div class="counts" title="проверено 6 из 15 утверждений">
-      <div class="stackbar"><i style="width:40%;background:#2f9e4f" title="правда 4"></i><i style="width:10%;background:#e5484d" title="ложно 1"></i><i style="width:10%;background:#d9b02f" title="странно 1"></i><i style="width:40%;background:#9aa0a6" title="без вердикта 9"></i></div>
+    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.9.1</span></b><span class="sub up"><i class="dot"></i>server is up</span></div><span class="spacer"></span><button class="run" style="display:none">Check again</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="dl" title="Download .md">↓</button><button class="fold">−</button><button class="fold close">×</button></div>
+    <div class="status"><span>Done · true 4 · false 1 · unclear 1</span></div>
+    <div class="counts" title="6 of 15 claims checked">
+      <div class="stackbar"><i style="width:40%;background:#2f9e4f" title="true 4"></i><i style="width:10%;background:#e5484d" title="false 1"></i><i style="width:10%;background:#d9b02f" title="unclear 1"></i><i style="width:40%;background:#9aa0a6" title="no verdict 9"></i></div>
       <div class="stacknums">
-        <button class="sn"><i style="background:#2f9e4f"></i>правда <b>4</b></button>
-        <button class="sn"><i style="background:#e5484d"></i>ложно <b>1</b></button>
-        <button class="sn"><i style="background:#d9b02f"></i>странно <b>1</b></button>
-        <button class="sn"><i style="background:#9aa0a6"></i>без вердикта <b>9</b></button>
+        <button class="sn"><i style="background:#2f9e4f"></i>true <b>4</b></button>
+        <button class="sn"><i style="background:#e5484d"></i>false <b>1</b></button>
+        <button class="sn"><i style="background:#d9b02f"></i>unclear <b>1</b></button>
+        <button class="sn"><i style="background:#9aa0a6"></i>no verdict <b>9</b></button>
       </div>
     </div>
-    <div class="feedtabs"><button class="ftab active">Текст</button><button class="ftab">Факты</button></div>
+    <div class="feedtabs"><button class="ftab active">Text</button><button class="ftab">Facts</button></div>
     <div class="feed">
-      <div class="card"><div class="statebg"><div class="row1"><a class="ts" href="#">41:12</a><span class="badge v-true">правда</span><span class="conf" style="color:#7bd88f"><span class="segs"><i class="on"></i><i class="on"></i><i class="on"></i></span><span class="lvl">высокая</span></span></div>
-        <div class="claim clamp">Морские лилии выглядели как растения, но были животными, и их стебель мог достигать в длину двадцати метров при жизни в глубокой воде мезозоя</div>
-        <div class="why">Морские лилии (Crinoidea) — иглокожие, животные.</div>
+      <div class="card"><div class="statebg"><div class="row1"><a class="ts" href="#">41:12</a><span class="badge v-true">true</span><span class="conf" style="color:#7bd88f"><span class="segs"><i class="on"></i><i class="on"></i><i class="on"></i></span><span class="lvl">high</span></span></div>
+        <div class="claim clamp">Sea lilies looked like plants but were animals, and their stems could reach twenty meters long in the deep waters of the Mesozoic</div>
+        <div class="why">Sea lilies (Crinoidea) are echinoderms, which are animals.</div>
         <div class="srcs"><a href="#">britannica.com</a><a href="#">nplus1.ru</a></div></div></div>
-      <div class="card"><div class="statebg"><div class="row1"><a class="ts" href="#">41:40</a><span class="badge v-none">не проверено</span></div>
-        <div class="tquote">«Утверждение вне лимита этого прогона»</div>
-        <div class="tcat">категория: исторический факт</div></div></div>
+      <div class="card"><div class="statebg"><div class="row1"><a class="ts" href="#">41:40</a><span class="badge v-none">unchecked</span></div>
+        <div class="tquote">"This claim is beyond this run's limit"</div>
+        <div class="tcat">category: historical fact</div></div></div>
     </div>
-  </div><p class="cap">done · стек-полоса с фильтрами, длинный claim с обрезкой, карточка-конспект (фича C)</p></div>
+  </div><p class="cap">done · stack bar with filters, long claim clamped, note card</p></div>
 
   <div><div class="panel">
-    <div class="head"><div class="tt"><b>Факт-чек <span class="ver">v0.9.1</span></b><span class="sub down"><i class="dot"></i>сервер не отвечает</span></div><span class="spacer"></span><button class="run">Проверить видео</button><button class="profile" title="Личный кабинет"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="fold">−</button><button class="fold close">×</button></div>
-    <div class="status err"><span>В видео нет субтитров, проверить его не получится</span></div>
-    <div class="feed"><div class="empty">вердикты появятся здесь</div></div>
-  </div><p class="cap">error · причина человеческим языком, сервер-строка гаснет</p></div>
+    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.9.1</span></b><span class="sub down"><i class="dot"></i>server is not responding</span></div><span class="spacer"></span><button class="run">Check video</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="fold">−</button><button class="fold close">×</button></div>
+    <div class="status err"><span>This video has no subtitles, so it cannot be checked</span></div>
+    <div class="feed"><div class="empty">verdicts will appear here</div></div>
+  </div><p class="cap">error · a human-readable reason, the server line goes red</p></div>
 
   <div><div class="panel">
-    <div class="head"><div class="tt"><b>Факт-чек <span class="ver">v0.9.1</span></b><span class="sub up"><i class="dot"></i>сервер на связи</span></div><span class="spacer"></span><button class="run" style="display:none">Проверить заново</button><button class="profile" title="Личный кабинет"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="fold">−</button><button class="fold close">×</button></div>
-    <div class="status"><span>Проверяемых утверждений не нашлось</span></div>
-    <div class="feed"><div class="empty"><b>Проверяемых утверждений не нашлось</b><br>похоже, в видео нет фактов для проверки: музыка, клип или чистое мнение</div></div>
-  </div><p class="cap">no-claims · продукт честно молчит</p></div>
+    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.9.1</span></b><span class="sub up"><i class="dot"></i>server is up</span></div><span class="spacer"></span><button class="run" style="display:none">Check again</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="fold">−</button><button class="fold close">×</button></div>
+    <div class="status"><span>No checkable claims found</span></div>
+    <div class="feed"><div class="empty"><b>No checkable claims found</b><br>the video seems to have no facts to check: music, a clip, or pure opinion</div></div>
+  </div><p class="cap">no-claims · the product stays silent on purpose</p></div>
 </div>
 
 <div class="row">
   <div><div class="mini-demo" style="display:flex;gap:28px">
     <div class="mini-circle"><span class="mini-ico"><svg viewBox="0 0 24 24" width="22" height="22"><rect x="4.1" y="6.4" width="15.8" height="11.2" rx="3" fill="none" stroke="#2F6FED" stroke-width="2.6"/><path d="M8.6 12 L10.9 14.3 L15.7 8.6" fill="none" stroke="#2F6FED" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="mini-x">×</span></div>
     <div class="mini-circle busy"><span class="mini-ico" style="color:#ffd66e"><svg viewBox="0 0 24 24" width="22" height="22"><rect x="4.1" y="6.4" width="15.8" height="11.2" rx="3" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M8.6 12 L10.9 14.3 L15.7 8.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="mini-x">×</span></div>
-  </div><p class="cap">mini · кружок 52px, знак бренда #2F6FED;<br>busy — пульс amber 1800ms, иконка #ffd66e; × 24px скрывает панель целиком</p></div>
+  </div><p class="cap">mini · 52px dot, brand sign #2F6FED;<br>busy: amber pulse 1800ms, icon #ffd66e; × 24px hides the panel entirely</p></div>
 
   <div><div style="display:flex;gap:10px;align-items:center;padding:20px 0">
-    <button class="ytbtn"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6.4" width="15.7" height="11.2" rx="3"/><path d="M8.6 12 L10.9 14.3 L15.7 8.6"/></svg>Факт-чек</button>
+    <button class="ytbtn"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6.4" width="15.7" height="11.2" rx="3"/><path d="M8.6 12 L10.9 14.3 L15.7 8.6"/></svg>Fact-check</button>
     <button class="ytbtn"><span class="cnt">7/15</span></button>
-    <button class="ytbtn done"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2f9e4f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.3 12.4 L10.8 14.9 L15.8 9"/></svg>Факт-чек</button>
-  </div><p class="cap">кнопка под видео (тёмная): обычная · идёт прогон (счётчик) · проверено (галочка)</p></div>
+    <button class="ytbtn done"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2f9e4f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.3 12.4 L10.8 14.9 L15.8 9"/></svg>Fact-check</button>
+  </div><p class="cap">button under the video (dark): idle · running (counter) · done (check)</p></div>
 
   <div><div style="background:#fff;border-radius:12px;padding:12px;display:flex;gap:10px;align-items:center;justify-content:center;min-width:220px">
-    <button class="ytbtn light"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6.4" width="15.7" height="11.2" rx="3"/><path d="M8.6 12 L10.9 14.3 L15.7 8.6"/></svg>Факт-чек</button>
-    <button class="ytbtn light done"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2f9e4f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.3 12.4 L10.8 14.9 L15.8 9"/></svg>Факт-чек</button>
-  </div><p class="cap">кнопка под видео (светлая): rgba(0,0,0,.05) → hover .1, текст #0f0f0f</p></div>
+    <button class="ytbtn light"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6.4" width="15.7" height="11.2" rx="3"/><path d="M8.6 12 L10.9 14.3 L15.7 8.6"/></svg>Fact-check</button>
+    <button class="ytbtn light done"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2f9e4f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.3 12.4 L10.8 14.9 L15.8 9"/></svg>Fact-check</button>
+  </div><p class="cap">button under the video (light): rgba(0,0,0,.05) → hover .1, text #0f0f0f</p></div>
 </div>
 
 <div class="row">
   <div><div class="pop">
-    <div class="pop-sec who"><span class="em">you@example.com</span><button class="signout">Выйти</button></div>
+    <div class="pop-sec who"><span class="em">you@example.com</span><button class="signout">Sign out</button></div>
     <div class="pop-sec">
-      <div class="row"><span>ID установки</span><b>a1b2…f9</b></div>
-      <div class="row"><span>бесплатных проверок сегодня</span><b>10</b></div>
-      <div class="row"><span>кредитов на счету</span><b>32</b></div>
-      <div class="row"><span>язык проверки</span><select class="vlang"><option>как в браузере</option><option>Русский</option><option>English</option></select></div>
-      <div class="vlanghint">язык обоснований; применяется к новым проверкам</div>
+      <div class="row"><span>Install ID</span><b>a1b2…f9</b></div>
+      <div class="row"><span>free checks today</span><b>10</b></div>
+      <div class="row"><span>credits on balance</span><b>32</b></div>
+      <div class="row"><span>check language</span><select class="vlang"><option>follow browser</option><option>Russian</option><option>English</option></select></div>
+      <div class="vlanghint">language of explanations; applies to new checks</div>
     </div>
     <div class="pop-sec">
-      <div class="ptitle">Кредиты</div>
-      <div class="cexpl">1 кредит = 1 машинная проверка утверждения через веб-поиск. Совпадения с готовыми факт-чеками бесплатны.</div>
+      <div class="ptitle">Credits</div>
+      <div class="cexpl">1 credit = 1 AI claim check via web search. Matches with existing human fact-checks are free.</div>
       <div class="packs"><button class="pack">+100</button><button class="pack">+500</button><button class="pack">+2000</button></div>
     </div>
-  </div><p class="cap">кабинет-поповер (v0.6.2): строка «язык проверки»<br>с подсказкой 10.5px; r10, ширина 264</p></div>
+  </div><p class="cap">account popover: the "check language" row<br>with a 10.5px hint; r10, width 264</p></div>
 </div>
 <style>
   .mini-demo { padding: 24px 0; }

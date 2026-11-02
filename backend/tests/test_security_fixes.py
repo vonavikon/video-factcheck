@@ -5,7 +5,7 @@ from videofactcheck import server
 
 
 def test_safe_url_blocks_javascript_scheme():
-    """СЕК-1: a javascript: URL from the LLM never becomes a source link."""
+    """SEC-1: a javascript: URL from the LLM never becomes a source link."""
     assert ve._safe_url("javascript:alert(1)//x") is None
     assert ve._safe_url("data:text/html,<script>") is None
     assert ve._safe_url('https://x"><img src=x onerror=alert(1>') is None
@@ -25,7 +25,7 @@ def test_votes_skip_unsafe_urls(monkeypatch):
 
 
 def test_topup_disabled_without_env(monkeypatch):
-    """СЕК-2: the mockup top-up is closed without VFC_ALLOW_MOCK_TOPUP=1."""
+    """SEC-2: the mockup top-up is closed without VFC_ALLOW_MOCK_TOPUP=1."""
     from fastapi.testclient import TestClient
     monkeypatch.delenv("VFC_ALLOW_MOCK_TOPUP", raising=False)
     client = TestClient(server.app)
@@ -43,7 +43,7 @@ def test_topup_disabled_without_env(monkeypatch):
 
 
 def test_anonymous_budget_is_free_daily(monkeypatch):
-    """СЕК-3: without install_id the budget is the daily quota, not unlimited."""
+    """SEC-3: without install_id the budget is the daily quota, not unlimited."""
     from videofactcheck import config, store
     monkeypatch.setattr(config, "DB_PATH", __import__("pathlib").Path(
         __import__("tempfile").mkdtemp()) / "a.db")

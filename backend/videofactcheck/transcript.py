@@ -1,7 +1,7 @@
-"""Stage 0: timestamped transcript via yt-dlp captions (decisions В6–В8).
+"""Stage 0: timestamped transcript via yt-dlp captions (decisions B6-B8).
 
-Minimal own VTT parser that strips rolling duplicates from auto-subs —
-timestamps are untouched, only text is cleaned (В8). Whisper fallback is planned for iteration 2.
+Minimal own VTT parser that strips rolling duplicates from auto-subs;
+timestamps are untouched, only text is cleaned (B8). Whisper fallback is planned for iteration 2.
 """
 import re
 import subprocess
@@ -30,7 +30,7 @@ def _sec(h: str, m: str, s: str, ms: str) -> float:
 
 def fetch(url: str, langs: str = "ru,ru-orig,en,en-orig") -> dict:
     """Downloads subtitles (manual first, then auto-subs) → metadata + cues."""
-    # СЕК-6: YouTube-watch URLs only (anti-SSRF for yt-dlp)
+    # SEC-6: YouTube-watch URLs only (anti-SSRF for yt-dlp)
     from urllib.parse import urlparse
     _p = urlparse(url if "://" in url else "https://" + url)
     if not (_p.netloc == "youtube.com" or _p.netloc.endswith(".youtube.com")
@@ -74,7 +74,7 @@ def fetch(url: str, langs: str = "ru,ru-orig,en,en-orig") -> dict:
                     "duration": float(duration or 0),
                     "lang": lang, "sub_kind": kind, "cues": cues,
                 }
-        # yt-dlp failed (429 from YouTube on a datacenter IP etc.) — this is not "no subs"
+        # yt-dlp failed (429 from YouTube on a datacenter IP etc.); this is not "no subs"
         if dl.returncode != 0 or "429" in dl.stderr or "Too Many Requests" in dl.stderr:
             import sys
             print(f"[transcript:err] yt-dlp: {dl.stderr.strip()[:400]}", file=sys.stderr)
@@ -100,7 +100,7 @@ def _parse_vtt(path: Path) -> list[dict]:
         lines = [ln.strip("\r") for ln in block.strip().splitlines() if ln.strip()]
         ts_idx = next((i for i, ln in enumerate(lines) if "-->" in ln), None)
         if ts_idx is None:
-            continue  # block without timing — note/style/orphan identifier
+            continue  # block without timing: note/style/orphan identifier
         m = TS.search(lines[ts_idx])
         if not m:
             continue
@@ -119,7 +119,7 @@ def _parse_vtt(path: Path) -> list[dict]:
         if cue_text == prev or (prev and cue_text in prev):
             continue
         if prev and prev in cue_text:
-            cues[-1]["text"] = cue_text  # auto-subs extend the line — keep the full one
+            cues[-1]["text"] = cue_text  # auto-subs extend the line, keep the full one
             cues[-1]["end"] = max(cues[-1]["end"], end)
             continue
         cues.append({"start": start, "end": end, "text": cue_text})

@@ -1,18 +1,18 @@
 """Claim deduplication without external models (v1; e5 embeddings later).
 
 Two comparison levels over normalized strings:
-1. Exact — normalized hash (lower, no punctuation, whitespace collapsed).
+1. Exact: normalized hash (lower, no punctuation, whitespace collapsed).
    Number words are not converted to digits: "семьдесят два" and "72" are
-   different at this level — acceptable for v1.
-2. Paraphrase — difflib.SequenceMatcher(None, a, b).ratio() over normalized
+   different at this level; acceptable for v1.
+2. Paraphrase: difflib.SequenceMatcher(None, a, b).ratio() over normalized
    strings, ratio >= threshold → duplicate. O(n²) over pairs: claims <= 150,
    strings are short; pairs with a length gap > 60% never reach difflib.
 
-Numbers: if both claims contain numbers (\\d+) and the sets differ —
+Numbers: if both claims contain numbers (\\d+) and the sets differ,
 this is NOT a duplicate even at high similarity ("написал за 72 часа" and
 "написал за 90 часов" are different claims).
 
-The 0.72 threshold is conservative: precision matters more than recall — better
+The 0.72 threshold is conservative: precision matters more than recall; better
 to send one extra paraphrase for checking than to merge two different claims.
 """
 import hashlib
@@ -22,7 +22,7 @@ from difflib import SequenceMatcher
 DEFAULT_THRESHOLD = 0.72
 
 # Length-based pre-filter: max(ratio) = 2*min/(min+max); with a gap > 60% this
-# gives < 0.571, so such a pair can never reach a threshold >= 0.58 —
+# gives < 0.571, so such a pair can never reach a threshold >= 0.58 and
 # difflib can be skipped for it.
 _MAX_LEN_GAP = 0.6
 
@@ -45,7 +45,7 @@ def extract_numbers(text: str) -> set[str]:
 
 
 def _skip_by_length(a: str, b: str) -> bool:
-    """True if the length gap > 60% — such a pair's ratio is guaranteed low."""
+    """True if the length gap > 60%; such a pair's ratio is guaranteed low."""
     if not a or not b:
         return False  # empty strings are compared directly (ratio 0.0 or 1.0)
     shorter, longer = min(len(a), len(b)), max(len(a), len(b))

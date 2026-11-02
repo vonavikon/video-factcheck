@@ -4,7 +4,7 @@ Without keys everything becomes a no-op.
 
 Layout: a vfc-run root (trace_id = run_id) → nested phase spans; LLM calls
 are logged as generations with usage_details and cost_details (bothub returns cost).
-Extraction runs in threads — workers carry the trace_id via a contextvar.
+Extraction runs in threads; workers carry the trace_id via a contextvar.
 """
 import contextvars
 import hashlib
@@ -31,7 +31,7 @@ def client():
         if _client_ready:
             return _client
         _client_ready = True
-        from . import config  # noqa: F401 — guarantees .env is loaded
+        from . import config  # noqa: F401: guarantees .env is loaded
         pub = os.environ.get("LANGFUSE_PUBLIC_KEY", "").strip()
         sec = os.environ.get("LANGFUSE_SECRET_KEY", "").strip()
         if not pub or not sec:
@@ -42,7 +42,7 @@ def client():
                 public_key=pub, secret_key=sec,
                 host=os.environ.get("LANGFUSE_HOST", "http://localhost:3000"),
             )
-        except Exception as e:  # noqa: BLE001 — tracing must not break the pipeline
+        except Exception as e:  # noqa: BLE001: tracing must not break the pipeline
             print(f"[tracing] langfuse недоступен: {e}")
             _client = None
         return _client
@@ -56,7 +56,7 @@ def enabled() -> bool:
 def root(run_id: str, metadata: dict | None = None):
     """The run's root span; trace_id = run_id, everything in the thread nests inside.
 
-    Important: NEVER swallow exceptions inside a contextmanager — Python
+    Important: NEVER swallow exceptions inside a contextmanager: Python
     raises RuntimeError("generator didn't stop after throw()") on a second
     yield after throw. Just re-raise.
     """

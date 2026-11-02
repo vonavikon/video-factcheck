@@ -1,13 +1,13 @@
 """Stage 1: extraction of checkable claims from transcript segments.
 
-Decisions В10–В11: schema with a verbatim quote and a category, WITHOUT numeric
+Decisions B10-B11: schema with a verbatim quote and a category, WITHOUT numeric
 specificity; opinions/forecasts/unfalsifiable statements are collected separately
 (as "skip"); dedup uses a normalized hash (embeddings if ever needed).
 
 2026-10-29: the previous segment goes into the prompt as a [контекст] line (subject
 for anaphora, not a quote source); channel/published go into the prompt context;
-significance filtering happens in a single call — significance 1–5 plus a deterministic
-filter (SIGNIFICANCE_MIN); when category="число" — normalized fields
+significance filtering happens in a single call (significance 1-5 plus a
+deterministic filter, SIGNIFICANCE_MIN); when category="число", normalized fields
 {subject, indicator, value_norm, unit, year}.
 """
 import hashlib
@@ -73,9 +73,9 @@ def claim_hash(claim: str) -> str:
 def extract(segments: list[dict], lang: str = "ru", title: str = "",
             concurrency: int = 4, progress=None, on_batch=None,
             channel: str | None = None, published: str | None = None) -> dict:
-    """Segments → {claims, skipped, batch_errors}. Batches are independent — run
+    """Segments → {claims, skipped, batch_errors}. Batches are independent, run
     them in parallel (ThreadPoolExecutor): a 43-min video = 29 batches, sequential
-    would take 30–60 minutes, interleaved is several times faster. progress(done, total)
+    would take 30-60 minutes, interleaved is several times faster. progress(done, total)
     drives the status.
 
     channel/published (optional, None-safe) join title in the system prompt
@@ -120,7 +120,7 @@ def extract(segments: list[dict], lang: str = "ru", title: str = "",
                 json_mode=True,
             )
             data = llm.parse_json(text)
-        except Exception:  # noqa: BLE001 — a broken batch must not kill the whole run
+        except Exception:  # noqa: BLE001: a broken batch must not kill the whole run
             errors.append(1)
             return []
         seg_map = {s["id"]: s for s in part}
@@ -132,7 +132,7 @@ def extract(segments: list[dict], lang: str = "ru", title: str = "",
             try:
                 sig = int(c.get("significance"))
             except (TypeError, ValueError):
-                sig = None  # field missing or garbage — do not silently drop the claim
+                sig = None  # field missing or garbage; do not silently drop the claim
             if sig is not None and sig < SIGNIFICANCE_MIN:
                 skipped.append({"quote": (c.get("quote") or "").strip(),
                                 "reason": "незначимо"})
@@ -184,11 +184,11 @@ def extract(segments: list[dict], lang: str = "ru", title: str = "",
             if progress:
                 progress(done, len(parts))
             # pipeline: a finished batch moves on (ClaimReview) before extraction ends;
-            # runs in this same thread — no races over mutable state
+            # runs in this same thread, no races over mutable state
             if on_batch and part_claims:
                 try:
                     on_batch(part_claims)
-                except Exception:  # noqa: BLE001 — the pipeline must not kill extraction
+                except Exception:  # noqa: BLE001: the pipeline must not kill extraction
                     pass
 
     # dedup: exact repeats by hash + paraphrases (difflib, numbers protected)
