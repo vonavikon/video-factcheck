@@ -2,6 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![tests](https://github.com/vonavikon/video-factcheck/actions/workflows/tests.yml/badge.svg)](https://github.com/vonavikon/video-factcheck/actions/workflows/tests.yml)
+[![VirusTotal](https://img.shields.io/badge/VirusTotal-0%2F62_clean-brightgreen)](https://www.virustotal.com/gui/file/6f6509be9a91af9b4970357caeba10194779432467fdc5051e8ccba25eb60d6e)
 
 [RU](README.ru.md) · [EN](README.md) · [中文](README.zh.md) · **Español** · [Français](README.fr.md)
 
