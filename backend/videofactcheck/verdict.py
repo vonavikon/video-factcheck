@@ -125,7 +125,7 @@ def _safe_url(url: str) -> str | None:
 def _votes(sources_by_pass: list[list[dict]]) -> list[dict]:
     """Sources of the best pass (the first with a non-empty list), with trust weights.
 
-    Rule B18 enforced in code, not just in the prompt: a source without a verbatim
+    Rule B18 is enforced in code as well as in the prompt: a source without a verbatim
     quote is not included (the model could have invented it).
     """
     best = next((s for s in sources_by_pass if s), [])

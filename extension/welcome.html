@@ -3,12 +3,12 @@
      Opens automatically on first install (background.js,
      chrome.runtime.onInstalled, reason === "install"; not opened on update).
      Decisions #5 and #10, the onboarding-first-run card.
-     No external resources — system fonts and inline SVG only (no remote code). -->
+     No external resources: system fonts and inline SVG only (no remote code). -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>YouTube Fact-Check — Welcome</title>
+<title>YouTube Fact-Check · Welcome</title>
 <link rel="stylesheet" href="pages.css">
 </head>
 <body>
@@ -29,19 +29,19 @@
     <!-- what the extension does -->
     <section class="card">
       <h2>What the extension does</h2>
-      <p>It fact-checks claims from YouTube videos while you watch and shows a verdict — true, false or unclear — with links to sources.</p>
+      <p>It fact-checks claims from YouTube videos while you watch and shows a verdict (true, false or unclear) with links to sources.</p>
       <ol class="steps">
         <li>Open any video on YouTube. A "Fact-check" button appears below it.</li>
-        <li>Click it — a panel opens next to the video, and a verdict map appears on the player timeline.</li>
+        <li>Click it: a panel opens next to the video, and a verdict map appears on the player timeline.</li>
         <li>Read the explanations and open the sources: scientific papers, official sites, published fact-checks.</li>
       </ol>
-      <p class="muted">This is an AI assessment with sources — not moderation and not a channel rating.</p>
+      <p class="muted">This is an AI assessment with sources, not moderation and not a channel rating.</p>
     </section>
 
     <!-- permissions in plain language: the same wording as in the store submission form -->
     <section class="card">
       <h2>Permissions and why</h2>
-      <p>The extension asks for exactly three permissions — here is what each one does:</p>
+      <p>The extension asks for exactly three permissions; here is what each one does:</p>
       <table class="tbl">
         <thead>
           <tr><th>Permission</th><th>Why</th></tr>
@@ -53,7 +53,7 @@
           </tr>
           <tr>
             <td><b>fact-check server</b></td>
-            <td>Fact-check server: claims from the subtitles are sent to the checking server — it searches for sources and returns verdicts. Without this access no checking is possible.</td>
+            <td>Fact-check server: claims from the subtitles are sent to the checking server; it searches for sources and returns verdicts. Without this access no checking is possible.</td>
           </tr>
           <tr>
             <td><b>storage</b></td>
@@ -84,8 +84,8 @@
 
 <script>
 "use strict";
-// "Got it" closes the tab. On an extension page — via chrome.tabs;
-// when the file is opened directly (no APIs) — window.close().
+// "Got it" closes the tab: on an extension page via chrome.tabs;
+// when the file is opened directly (no APIs), window.close().
 document.getElementById("btn-ok").addEventListener("click", () => {
   try {
     if (typeof chrome !== "undefined" && chrome.tabs && chrome.tabs.getCurrent) {
@@ -95,7 +95,7 @@ document.getElementById("btn-ok").addEventListener("click", () => {
       });
       return;
     }
-  } catch { /* file:// — no chrome.* */ }
+  } catch { /* file://, no chrome.* */ }
   window.close();
 });
 </script>

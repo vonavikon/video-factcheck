@@ -45,7 +45,7 @@ Transcript lines and fact cards sit on one vertical: the timestamp in a 46px rig
 
 Sources differ in strength, and that is visible before the click: "science" (peer-reviewed journals, PMC, preprints, .edu) gets the blue pair of the science block (#17233a/#7ab3ff), "official" (government domains, WHO/UN) gets the v-true green pair (#1d3a24/#7bd88f). The pill is 9px uppercase before the domain; in the science block the full label reads "scientific article". In the source list, science and official come first. The pill marks the source class, not a verdict: it does not compete with the badges through state colors.
 
-## Roundness (canon since 2026-10-28, review
+## Roundness (canon since 2026-10-28)
 
 The principle: **objects are soft, connections are hard.** Badges, counters, and the button are pills (radius = half the height); the panel is 12px on all sides (a floating card); card state backgrounds (hover/current/new) are radius-8 insets with 3px side margins. Connections, the 1px card dividers, mono timestamps, and the 12px grid, stay straight: the feed reads as a column, not a set of candies. The 50% dot (the collapsed panel with its ×) is the limiting case of a pill: it is an object, not a container, so the radius >16 ban does not apply to it; the ban targets containers. Bans: nested radii, shadows on cards (a shadow belongs to the panel alone). Operate strictness is held by the tint pairs, the single 700 weight, and the tight type scale: we round the shape and leave the typography alone.
 

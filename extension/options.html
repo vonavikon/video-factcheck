@@ -2,7 +2,7 @@
 <!-- video-factcheck: extension settings page (options).
      Decision #10. Registered in manifest.json
      via options_ui (open_in_tab). The check language writes the same
-     vfc_verdict_lang key as the select in the panel popover (content.js) —
+     vfc_verdict_lang key as the select in the panel popover (content.js);
      the settings stay synchronized via chrome.storage. The API address field
      is visible in dev mode only (the vfc_dev key): by default the production
      address is neither shown nor changed. No external resources (no remote code). -->
@@ -10,7 +10,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>YouTube Fact-Check — Settings</title>
+<title>YouTube Fact-Check · Settings</title>
 <link rel="stylesheet" href="pages.css">
 </head>
 <body>
@@ -54,7 +54,7 @@
       <div class="field" id="api-field" hidden>
         <label for="opt-api">API address</label>
         <input type="url" id="opt-api" placeholder="http://127.0.0.1:8765" spellcheck="false">
-        <p class="hint">Fact-check server address. Empty value — the build default.</p>
+        <p class="hint">Fact-check server address. An empty value means the build default.</p>
         <div style="display:flex; align-items:center; gap:12px; margin-top:10px">
           <button type="button" class="btn" id="btn-api-save">Save address</button>
           <span class="saved" id="api-saved" role="status">Saved</span>
@@ -64,7 +64,7 @@
 
     <section class="card">
       <h2>About</h2>
-      <p>YouTube Fact-Check · video-factcheck — checks claims from videos while you watch and shows verdicts with sources.</p>
+      <p>YouTube Fact-Check · video-factcheck: checks claims from videos while you watch and shows verdicts with sources.</p>
       <p><span>Build version:</span> <span class="ver" id="app-version">—</span></p>
       <p>
         <span>Privacy policy:</span>
@@ -85,15 +85,15 @@ try {
   if (typeof chrome !== "undefined" && chrome.runtime && chrome.runtime.getManifest) {
     $("app-version").textContent = chrome.runtime.getManifest().version || "—";
   }
-} catch { /* the file was opened directly — the dash stays */ }
+} catch { /* the file was opened directly, the placeholder stays */ }
 
-// — check language: the vfc_verdict_lang key shared with the popover select —
+// check language: the vfc_verdict_lang key shared with the popover select
 $("opt-vlang").addEventListener("change", async () => {
   if (!storageAvailable) return;
   try { await chrome.storage.local.set({ vfc_verdict_lang: $("opt-vlang").value }); } catch {}
 });
 
-// — dev mode: the vfc_dev key drives both the panel (PUBLIC_BUILD) and the API field —
+// dev mode: the vfc_dev key drives both the panel (PUBLIC_BUILD) and the API field
 $("opt-dev").addEventListener("change", async () => {
   const on = $("opt-dev").checked;
   $("api-field").hidden = !on;   // by default the production address is neither shown nor changed
@@ -101,7 +101,7 @@ $("opt-dev").addEventListener("change", async () => {
   try { await chrome.storage.local.set({ vfc_dev: on }); } catch {}
 });
 
-// — API address: the vfc_api_base key; an empty value restores the build default —
+// API address: the vfc_api_base key; an empty value restores the build default
 $("btn-api-save").addEventListener("click", async () => {
   if (!storageAvailable) return;
   const val = $("opt-api").value.trim();
@@ -113,7 +113,7 @@ $("btn-api-save").addEventListener("click", async () => {
   } catch {}
 });
 
-// — initial values from chrome.storage (defaults match content.js) —
+// initial values from chrome.storage (defaults match content.js)
 (async () => {
   if (!storageAvailable) return;
   try {

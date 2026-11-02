@@ -4,13 +4,13 @@
      chrome.storage.local (the record format matches saveHistory/restoreHistory
      in extension/content.js: { [videoId]: { runId, claims[], summary, status,
      error, at } }, a 50-record limit). The title and channel are not stored in
-     a record — the videoId is shown with a link to the video. The transcript is
+     a record; the videoId is shown with a link to the video. The transcript is
      not stored in history. No external resources (no remote code). -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>YouTube Fact-Check — Check history</title>
+<title>YouTube Fact-Check · Check history</title>
 <link rel="stylesheet" href="pages.css">
 </head>
 <body>
@@ -25,7 +25,7 @@
     </svg>
     <h1>Check history</h1>
   </header>
-  <p class="page-sub">The last 50 checked videos — locally, in this browser.</p>
+  <p class="page-sub">The last 50 checked videos, stored locally in this browser.</p>
 
   <main>
     <!-- free-check usage over 30 days (computed from history records) -->
@@ -41,7 +41,7 @@
       <div id="history-list">
         <div class="empty">
           <b>Nothing checked yet</b>
-          <span>Open a video on YouTube and click the "Fact-check" button below it — results will appear here.</span>
+          <span>Open a video on YouTube and click the "Fact-check" button below it; results will appear here.</span>
         </div>
       </div>
     </section>
@@ -59,7 +59,7 @@
             <td class="free">free</td>
           </tr>
           <tr>
-            <td>Verdict from a published fact-check (ClaimReview — already verified by people)</td>
+            <td>Verdict from a published fact-check (ClaimReview, already verified by people)</td>
             <td class="free">free</td>
           </tr>
           <tr>
@@ -90,7 +90,7 @@ const STR = {
   usageRuns: "completed checks",
   usageChecked: "claims checked",
   emptyTitle: "Nothing checked yet",
-  emptyHint: "Open a video on YouTube and click the \"Fact-check\" button below it — results will appear here.",
+  emptyHint: "Open a video on YouTube and click the \"Fact-check\" button below it; results will appear here.",
   statusDone: "done",
   statusError: "error",
   video: "video",
@@ -129,7 +129,7 @@ function fmtDate(ts) {
   return d.toLocaleString("en-US",
     { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
-// timecode m:ss — like fmtTS in content.js
+// timecode m:ss, like fmtTS in content.js
 function fmtTS(sec) {
   const s = Math.max(0, Math.floor(Number(sec) || 0));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -241,7 +241,7 @@ function renderAll(history) {
 }
 
 async function loadHistory() {
-  // when the file is opened directly chrome.storage is unavailable — show the empty
+  // when the file is opened directly chrome.storage is unavailable: show the empty
   // state without console errors
   if (typeof chrome === "undefined" || !chrome.storage || !chrome.storage.local) {
     renderAll({});
