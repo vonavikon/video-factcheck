@@ -1,0 +1,41 @@
+name: vt-scan
+
+# One-off VirusTotal scan of the main tarball (owner's badge rule).
+# The key lives in the VT_API_KEY secret; it is never echoed.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download tarball and upload to VirusTotal
+        env:
+          VT: ${{ secrets.VT_API_KEY }}
+        run: |
+          set -e
+          curl -sL --retry 3 --retry-all-errors "https://codeload.github.com/vonavikon/video-factcheck/tar.gz/refs/heads/main" -o repo.tar.gz
+          SHA=$(sha256sum repo.tar.gz | cut -d' ' -f1)
+          echo "sha256: $SHA"
+          # hash-first: maybe already known
+          CODE=$(curl -s -o /tmp/known.json -w "%{http_code}" -H "x-apikey: $VT" "https://www.virustotal.com/api/v3/files/$SHA")
+          if [ "$CODE" = "200" ]; then echo "already known"; cat /tmp/known.json | jq -r '.data.attributes.last_analysis_stats'; exit 0; fi
+          UP=$(curl -s -H "x-apikey: $VT" -F "file=@repo.tar.gz" "https://www.virustotal.com/api/v3/files")
+          ID=$(echo "$UP" | jq -r '.data.id')
+          echo "analysis: $ID"
+          for i in $(seq 1 20); do
+            sleep 25
+            ST=$(curl -s -H "x-apikey: $VT" "https://www.virustotal.com/api/v3/analyses/$ID" | tee /tmp/an.json | jq -r '.data.attributes.status')
+            echo "poll $i: $ST"
+            if [ "$ST" = "completed" ]; then
+              jq -r '.data.attributes.stats' /tmp/an.json
+              echo "report: https://www.virustotal.com/gui/file/$SHA"
+              exit 0
+            fi
+          done
+          echo "timeout waiting for analysis"; exit 1
