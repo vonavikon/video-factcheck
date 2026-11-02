@@ -11,6 +11,7 @@ Une extension Chrome (MV3) qui vérifie les affirmations des vidéos YouTube pen
 
 ![Comment ça marche : un panneau de vérification sur YouTube, des cartes d'affirmations avec verdicts et minutages, un clic sur le minutage saute la vidéo, chaque verdict porte une source avec citation et pondération](assets/concept.gif?v=v5)
 Version vidéo (10 s, sans son) : [how-it-works.mp4](assets/how-it-works.mp4?v=v5)
+Démo réelle sur YouTube (15 s, sans son) : [youtube-demo.mp4](assets/youtube-demo.mp4?v=v1)
 
 ## Comment ça marche
 

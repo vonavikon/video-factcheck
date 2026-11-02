@@ -11,6 +11,7 @@ A Chrome extension (MV3) that fact-checks YouTube videos while you watch. It rea
 
 ![How it works: a fact-check panel over YouTube, claim cards with verdicts and timestamps, clicking a timestamp seeks the video, each verdict has a source with a quote and a weight](assets/concept.gif?v=v5)
 Video version (10 s, silent): [how-it-works.mp4](assets/how-it-works.mp4?v=v5)
+Live run on YouTube (15 s, silent): [youtube-demo.mp4](assets/youtube-demo.mp4?v=v1)
 
 ## How it works
 

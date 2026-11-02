@@ -11,6 +11,7 @@ Una extensión de Chrome (MV3) que verifica las afirmaciones de videos de YouTub
 
 ![Cómo funciona: panel de verificación sobre YouTube, tarjetas de afirmaciones con veredictos y marcas de tiempo, un clic en la marca salta el video, cada veredicto lleva fuente con cita y peso](assets/concept.gif?v=v5)
 Versión en vídeo (10 s, sin sonido): [how-it-works.mp4](assets/how-it-works.mp4?v=v5)
+Demo real en YouTube (15 s, sin sonido): [youtube-demo.mp4](assets/youtube-demo.mp4?v=v1)
 
 ## Cómo funciona
 

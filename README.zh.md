@@ -11,6 +11,7 @@
 
 ![工作原理：YouTube 上的事实核查面板，论断卡片带判定和时间点，点击时间点跳转视频，每条判定附来源引文和权重](assets/concept.gif?v=v5)
 视频版（10 秒，无声）：[how-it-works.mp4](assets/how-it-works.mp4?v=v5)
+YouTube 实机演示（15 秒，无声）：[youtube-demo.mp4](assets/youtube-demo.mp4?v=v1)
 
 ## 工作原理
 
