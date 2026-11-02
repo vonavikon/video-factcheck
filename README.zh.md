@@ -9,7 +9,7 @@
 
 「存疑」是正式判定，不是敷衍：它标记的是两次网页搜索结论不一致、或来源不足的论断。科学层刻意保守：一篇文章只有在切题且足够新时才能影响判定，而且永远不会给出「虚假」：最多把「属实」降为「存疑」。
 
-![工作原理：YouTube 上的事实核查面板，论断卡片带判定和时间点，点击时间点跳转视频，每条判定附来源引文和权重](assets/concept.gif?v=v5)
+![实测：YouTube 页面上打开事实核查面板，逐条显示判定卡片（真、假、存疑）、时间码和来源引文](assets/youtube-demo.webp?v=v1)
 视频版（10 秒，无声）：[how-it-works.mp4](assets/how-it-works.mp4?v=v5)
 YouTube 实机演示（15 秒，无声）：[youtube-demo.mp4](assets/youtube-demo.mp4?v=v1)
 
