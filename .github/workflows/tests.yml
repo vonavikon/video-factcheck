@@ -5,6 +5,9 @@ name: tests
 # (VFC_PLAUSIBILITY=0), no keys required. The package is installed in editable mode
 # so that pytest finds videofactcheck without installing it into the system python.
 
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main]
