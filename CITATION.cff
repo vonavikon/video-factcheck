@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata in this file."
+title: video-factcheck
+version: 0.9.1
+authors:
+  - name: vonavikon
+type: software
+repository-code: "https://github.com/vonavikon/video-factcheck"
+url: "https://github.com/vonavikon/video-factcheck"
+abstract: "Chrome extension that fact-checks YouTube videos while you watch: extracts checkable claims from subtitles with timestamps and verifies them against human fact-checks, web search, and scientific papers."
+keywords:
+  - fact-checking
+  - youtube
+  - chrome-extension
+  - llm
+  - misinformation
+license: MIT
