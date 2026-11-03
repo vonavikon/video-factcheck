@@ -1,18 +1,18 @@
-"""Stage 2.5: plausibility check against scientific databases.
+"""Этап 2.5: проверка правдоподобия против научных баз (docs/verdict-math.md).
 
-Indirect evidence: there are and will be no direct fact-checks of niche claims,
-but a claim may run into established scientific knowledge (design example:
-"a diploma in 72 hours" ↔ sleep-deprivation science). Sources: Europe PMC
-(medicine/biology, full abstracts, no key) and OpenAlex (all of science,
-a key multiplies rate limits ×10). Adjudication is a cheap deepseek NLI over
-the top-3 abstracts with a mandatory verbatim quote.
+Косвенные свидетельства: прямых факт-чеков нишевых утверждений нет и не будет,
+но утверждение упирается в устоявшееся научное знание (пример из дизайна:
+«диплом за 72 часа» ↔ наука депривации сна). Источники — Europe PMC
+(медицина/биология, полные абстракты, без ключа) и OpenAlex (вся наука,
+ключ ×10 лимитов). Судейство — дешёвый deepseek NLI по топ-3 абстрактам
+с обязательной дословной цитатой.
 
-Epistemic rule: indirect evidence NEVER yields "ложно".
-Relation "refutes" is shown as a separate status "научные данные:
-противоречит" next to the sonar verdict, not instead of it.
+Эпистемическое правило: косвенное свидетельство НИКОГДА не даёт «ложно».
+Relation "refutes" показывается как отдельный статус «научные данные:
+противоречит» рядом с вердиктом sonar, не вместо него.
 
-The layer is free for the user (only sonar spends credits) and
-optional: any error → None, the pipeline is unaffected.
+Слой бесплатный для пользователя (кредиты списывает только sonar) и
+необязательный: любая ошибка → None, пайплайн не страдает.
 """
 import json
 import os
@@ -20,6 +20,7 @@ import os
 import httpx
 
 from . import llm
+from .verify import quote_in_text
 
 PMC_API = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
 OPENALEX_API = "https://api.openalex.org/works"
@@ -48,13 +49,13 @@ ADJUDICATE_PROMPT = """Ты — научный рецензент. Дано ут
 
 
 def enabled() -> bool:
-    """The layer is on by default; VFC_PLAUSIBILITY=0 disables it (cost saving/debugging)."""
+    """Слой включён по умолчанию; VFC_PLAUSIBILITY=0 выключает (экономия/отладка)."""
     return os.environ.get("VFC_PLAUSIBILITY", "1").strip() != "0"
 
 
 def _en_query(claim: str, lang: str) -> str:
-    """English search query: science is published in English.
-    For an ru claim, one cheap call: rephrase it into an EN search query."""
+    """Поисковый запрос на английском: наука публикуется по-английски.
+    Для ru-утверждения — один дешёвый вызов: переформулировать в поисковый EN."""
     if lang == "en":
         return claim
     try:
@@ -65,7 +66,7 @@ def _en_query(claim: str, lang: str) -> str:
              {"role": "user", "content": claim}],
             max_tokens=3000, temperature=0.0)
         return (out or "").strip().strip('"')[:200] or claim
-    except Exception:  # noqa: BLE001: optional layer
+    except Exception:  # noqa: BLE001 — слой необязательный
         return claim
 
 
@@ -79,7 +80,7 @@ def _pmc(query: str) -> list[dict]:
         out = []
         for a in (r.json().get("resultList") or {}).get("result", []):
             ab = (a.get("abstractText") or "").strip()
-            if len(ab) < 120:  # empty/truncated abstracts are useless for NLI
+            if len(ab) < 120:  # пустые/обрезанные абстракты бесполезны для NLI
                 continue
             pmid = a.get("pmid") or a.get("doi") or ""
             url = (f"https://europepmc.org/article/{a.get('source', 'MED')}/{pmid}"
@@ -111,7 +112,7 @@ def _openalex(query: str) -> list[dict]:
             inv = w.get("abstract_inverted_index")
             if not inv:
                 continue
-            # inverted index → text: word → list of positions
+            # инвертированный индекс → текст: слово → список позиций
             words: dict[int, str] = {}
             for word, positions in inv.items():
                 for pos in positions:
@@ -131,16 +132,16 @@ def _openalex(query: str) -> list[dict]:
 
 
 def _cjk(text: str) -> bool:
-    """CJK leakage: deepseek occasionally answers in Chinese despite the prompt language
-    (observed live: why came back in Chinese against the prompt)."""
+    """CJK-утечка: deepseek изредка отвечает по-китайски вопреки языку в промпте
+    (живой случай 2026-10-29: why на китайском в прогоне про миноксидил)."""
     return any("\u4e00" <= ch <= "\u9fff" for ch in text)
 
 
 def check(claim: str, lang: str = "ru") -> dict | None:
-    """Claim → scientific plausibility verdict, or None (the layer stayed silent).
+    """Утверждение → вердикт научного правдоподобия или None (слой промолчал).
 
-    Returns {relation, why, quote, source: {title, url, year}}.
-    relation "refutes" means "unlikely per scientific evidence" (never "ложно").
+    Возвращает {relation, why, quote, source: {title, url, year}}.
+    relation "refutes" — «маловероятно по научным данным» (никогда «ложно»).
     """
     if not claim.strip():
         return None
@@ -154,8 +155,8 @@ def check(claim: str, lang: str = "ru") -> dict | None:
             for i, a in enumerate(articles))
         prompt = (ADJUDICATE_PROMPT.replace("{LANG}", "русском" if lang == "ru" else "English")
                   .replace("{N}", "0-" + str(len(articles) - 1)))
-        # why must be in the user's language: a Chinese answer is retried,
-        # at most 3 attempts; persistent leakage means the layer stays silent (None)
+        # why обязан быть на языке пользователя: китайский ответ переспрашиваем,
+        # максимум 3 попытки; устойчивая утечка — слой молчит (None)
         data: dict = {}
         for attempt in range(3):
             raw = llm.chat(
@@ -170,11 +171,11 @@ def check(claim: str, lang: str = "ru") -> dict | None:
         if relation not in ("refutes", "supports", "insufficient"):
             return None
         if _cjk((data.get("why") or "")):
-            return None  # showing Chinese text to the user is worse than staying silent
-        # step-2 guards: science influences the verdict only with
-        # a verbatim quote (rule B18 above), DIRECT relevance and freshness
-        # (year ≥ 2015 or a review/meta-analysis). A relation without a quote is already dropped;
-        # cautious default: if the NLI gave no relevance, treat as adjacent
+            return None  # показать китайский текст пользователю хуже, чем промолчать
+        # гварды шага 2 (docs/verdict-math.md): наука влияет на вердикт только при
+        # дословной цитате (правило В18 выше), ПРЯМОЙ релевантности и свежести
+        # (год ≥ 2015 либо обзор/мета-анализ). relation без цитаты уже отброшен;
+        # осторожный дефолт: NLI не выдал relevance = считаем смежной
         relevance = data.get("relevance")
         if relevance not in ("directly_on_topic", "adjacent", "off"):
             relevance = "adjacent"
@@ -182,7 +183,13 @@ def check(claim: str, lang: str = "ru") -> dict | None:
         src = articles[idx] if isinstance(idx, int) and 0 <= idx < len(articles) else articles[0]
         quote = (data.get("quote") or "").strip()
         if relation != "insufficient" and not quote:
-            return None  # without a verbatim quote the conclusion does not count (rule B18)
+            return None  # без дословной цитаты вывод не засчитывается (правило В18)
+        # Evidence Verification, local corpus: the quote must actually occur
+        # in the cited abstract (B18 in code, not only in the prompt). A quote
+        # not found in the abstract we hold in hand = fabrication → the whole
+        # NLI answer is untrustworthy → the layer stays silent (None).
+        if quote and not quote_in_text(quote, src["abstract"]):
+            return None
         try:
             src_yr = int(str(src.get("year") or "0"))
         except ValueError:
@@ -199,5 +206,5 @@ def check(claim: str, lang: str = "ru") -> dict | None:
             "source": {"title": src["title"], "url": src["url"], "year": src["year"],
                        "kind": src.get("kind", "primary")},
         }
-    except Exception:  # noqa: BLE001: optional layer, any error means silence
+    except Exception:  # noqa: BLE001 — слой необязательный: любая ошибка = молчание
         return None

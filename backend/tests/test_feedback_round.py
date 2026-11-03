@@ -1,5 +1,5 @@
-"""Feedback round 2026-10-28: timeline stratification of verdicts, confidence.
-2026-10-29: verdicts in parallel (3 threads), the budget is pre-allocated before the pool."""
+"""Фидбек-раунд 2026-10-28: стратификация вердиктов по таймлайну, уверенность.
+2026-10-29: вердикты параллельно (3 потока), бюджет предвыделяется до пула."""
 import time
 
 from videofactcheck import config, pipeline, store, tracing
@@ -12,8 +12,8 @@ def _c(i, t):
 
 
 def test_stratification_covers_whole_timeline():
-    """Feedback item 6: for a 43-min video, all verdicts must not pile up in the first minutes."""
-    claims = [_c(i, i * 100) for i in range(25)]  # 25 claims over 0..2400s
+    """Фидбек-6: у 43-мин видео все вердикты не должны сбиваться в первые минуты."""
+    claims = [_c(i, i * 100) for i in range(25)]  # 25 утверждений на 0..2400с
     picked = _select_for_verdicts(claims, 15)
     ts = [c["t_start"] for c in picked]
     assert len(picked) == 15
@@ -27,22 +27,22 @@ def test_stratification_small_list_passthrough():
 
 
 def test_confidence_levels():
-    """The confidence formula: pass agreement + source quality."""
+    """Формула уверенности: согласие проходов + качество источников."""
     votes_hi = [{"trust": 0.9}, {"trust": 0.8}]
     votes_mid = [{"trust": 0.5}]
     votes_weak = [{"trust": 0.1}]
     assert ve._confidence(["правда", "правда"], votes_hi) == "высокая"
     assert ve._confidence(["правда", "правда"], votes_mid) == "средняя"
     assert ve._confidence(["ложно", "ложно"], votes_weak) == "низкая"
-    assert ve._confidence(["правда", "ложно"], votes_hi) == "низкая"  # passes disagreed
-    assert ve._confidence(["правда", "правда"], []) == "низкая"  # a verdict without sources is doubtful
+    assert ve._confidence(["правда", "ложно"], votes_hi) == "низкая"  # разошлись
+    assert ve._confidence(["правда", "правда"], []) == "низкая"  # вердикт без источников сомнителен
 
 
-# ── stage 2.5: scientific plausibility attaches to the verdict ───────────────
+# ── этап 2.5: научное правдоподобие прикрепляется к вердикту ────────────────
 
 def test_plausibility_attached_to_verdict(monkeypatch, tmp_path):
-    """The layer is enabled, plausibility.check is mocked: refutes attaches to result
-    as the plausibility block; the verdict stays sonar's (indirect ≠ "ложно")."""
+    """Слой включён, plausibility.check замокан: refutes прикрепляется к result
+    как блок plausibility; verdict остаётся от sonar (косвенное ≠ «ложно»)."""
     monkeypatch.setattr(config, "DB_PATH", tmp_path / "t.db")
     monkeypatch.delenv("VFC_DEV_UNLIMITED", raising=False)
     monkeypatch.setenv("VFC_PLAUSIBILITY", "1")
@@ -68,19 +68,19 @@ def test_plausibility_attached_to_verdict(monkeypatch, tmp_path):
     st = pipeline.get_status(run_id)
     assert st["status"] == "done", st.get("error")
     saved = st["claims"][0]["result"]
-    assert saved["verdict"] == "странно"          # the verdict is not replaced by indirect evidence
+    assert saved["verdict"] == "странно"          # вердикт не заменён косвенным
     assert saved["plausibility"]["relation"] == "refutes"
     assert saved["plausibility"]["source"]["year"] == "2019"
 
 
-# ── ClaimReview pipeline (29.10 feedback: "entities faster") ─────────────────
+# ── конвейер ClaimReview (фидбек 29.10 «сущности быстрее») ──────────────────
 
 def test_claimreview_pipeline_via_on_batch(monkeypatch, tmp_path):
-    """ClaimReview checks claims as batches arrive (on_batch), before extraction
-    finishes; hit-claims are not matched again after extraction."""
+    """ClaimReview проверяет утверждения по мере батчей (on_batch), до конца
+    экстракции; повторный матчинг hit-claims после экстракции не происходит."""
     monkeypatch.setattr(config, "DB_PATH", tmp_path / "t.db")
     monkeypatch.delenv("VFC_DEV_UNLIMITED", raising=False)
-    monkeypatch.setenv("VFC_PLAUSIBILITY", "0")  # no network; the layer is tested separately
+    monkeypatch.setenv("VFC_PLAUSIBILITY", "0")  # без сети; слой тестируется отдельно
     monkeypatch.setattr(tracing, "client", lambda: None)
     t = {"title": "T", "video_id": "v", "duration": 60.0, "lang": "ru",
          "sub_kind": "client", "cues": [{"start": 0.0, "end": 2.0, "text": "текст"}]}
@@ -89,7 +89,7 @@ def test_claimreview_pipeline_via_on_batch(monkeypatch, tmp_path):
 
     def fake_extract(segments, lang="ru", title="", concurrency=4, progress=None, on_batch=None, **kw):
         if on_batch:
-            on_batch([claims[0]])  # the first batch arrived before extraction "finished"
+            on_batch([claims[0]])  # первый батч приехал до «конца» экстракции
         return {"claims": claims, "skipped": []}
 
     human = {"verdict": "правда", "why": "Проверено людьми (X): «true»", "votes": [],
@@ -112,21 +112,21 @@ def test_claimreview_pipeline_via_on_batch(monkeypatch, tmp_path):
     st = pipeline.get_status(run_id)
     assert st["status"] == "done", st.get("error")
     saved = {c["claim"]: c for c in st["claims"]}
-    assert saved[claims[0]["claim"]]["why"].startswith("Проверено людьми")  # pipelined verdict
-    assert saved[claims[1]["claim"]]["verdict"] == "ложно"  # the sonar layer is alive
-    # claim 0 was matched twice (on_batch + layer 1 afterwards), acceptable, but the verdict is one;
-    # sonar was not run on it
+    assert saved[claims[0]["claim"]]["why"].startswith("Проверено людьми")  # конвейерный вердикт
+    assert saved[claims[1]["claim"]]["verdict"] == "ложно"  # sonar-слой жив
+    # claim 0 заматчен дважды (on_batch + слой 1 после) — допустимо, но вердикт один;
+    # sonar по нему не гонялся
     assert calls["sonar"] == 1
 
 
-# ── check language (v0.6.2, review P1-5) ────────────────────────────────────
+# ── язык проверки (v0.6.2, ревью P1-5) ──────────────────────────────────────
 
 def test_verdict_lang_reaches_both_layers(monkeypatch, tmp_path):
-    """verdict_lang='en' from the request reaches both sonar and the ClaimReview layer;
-    the transcript language (ru) does not override the setting."""
+    """verdict_lang='en' из запроса доходит и до sonar, и до ClaimReview-слоя;
+    язык транскрипта (ru) при этом не перебивает настройку."""
     monkeypatch.setattr(config, "DB_PATH", tmp_path / "t.db")
     monkeypatch.delenv("VFC_DEV_UNLIMITED", raising=False)
-    monkeypatch.setenv("VFC_PLAUSIBILITY", "0")  # no network; the layer is tested separately
+    monkeypatch.setenv("VFC_PLAUSIBILITY", "0")  # без сети; слой тестируется отдельно
     monkeypatch.setattr(tracing, "client", lambda: None)
     t = {"title": "T", "video_id": "v", "duration": 60.0, "lang": "ru",
          "sub_kind": "client", "cues": [{"start": 0.0, "end": 2.0, "text": "текст"}]}
@@ -136,7 +136,7 @@ def test_verdict_lang_reaches_both_layers(monkeypatch, tmp_path):
 
     def fake_match(claim, lang="ru"):
         seen["human"] = lang
-        return None  # ClaimReview missed → the claim goes to sonar
+        return None  # ClaimReview промахнулся → claim уйдёт в sonar
 
     def fake_check(claim, lang="ru", passes=2, title=""):
         seen["sonar"] = lang
@@ -149,11 +149,11 @@ def test_verdict_lang_reaches_both_layers(monkeypatch, tmp_path):
     pipeline._run(run_id, "https://youtube.com/watch?v=v", t, "", "en")
     st = pipeline.get_status(run_id)
     assert st["status"] == "done", st.get("error")
-    assert seen["sonar"] == "en"   # the setting reached sonar
-    assert seen["human"] == "en"   # and the ClaimReview layer
+    assert seen["sonar"] == "en"   # настройка дошла до sonar
+    assert seen["human"] == "en"   # и до ClaimReview-слоя
 
 
-# ── parallel verdicts (2026-10-29) ──────────────────────────────────────────
+# ── параллельные вердикты (2026-10-29) ─────────────────────────────────────
 
 def _full_claim(i: int) -> dict:
     return {"hash": f"h{i}", "quote": f"цитата {i}", "claim": f"утверждение {i}",
@@ -162,12 +162,12 @@ def _full_claim(i: int) -> dict:
 
 
 def _mocked_run(monkeypatch, tmp_path, claims: list[dict], *, check_delay: float = 0.0):
-    """A full synchronous _run: client transcript, extraction and both verdict
-    layers mocked. Returns (a run(install_id) closure, state)."""
+    """Полный синхронный прогон _run: клиентский transcript, экстракция и оба
+    слоя вердиктов замоканы. Возвращает (замыкание run(install_id), state)."""
     monkeypatch.setattr(config, "DB_PATH", tmp_path / "t.db")
     monkeypatch.delenv("VFC_DEV_UNLIMITED", raising=False)
-    monkeypatch.setenv("VFC_PLAUSIBILITY", "0")  # no network; the layer is tested separately  # =1 in the dev .env
-    monkeypatch.setattr(tracing, "client", lambda: None)  # langfuse disabled, no network
+    monkeypatch.setenv("VFC_PLAUSIBILITY", "0")  # без сети; слой тестируется отдельно  # в .env разработки =1
+    monkeypatch.setattr(tracing, "client", lambda: None)  # langfuse отключён — без сети
     t = {"title": "Тест", "video_id": "vid", "duration": 600.0, "lang": "ru",
          "sub_kind": "auto", "cues": [{"start": 0.0, "end": 2.0, "text": "текст"}]}
     monkeypatch.setattr(pipeline.claims_mod, "extract",
@@ -176,7 +176,7 @@ def _mocked_run(monkeypatch, tmp_path, claims: list[dict], *, check_delay: float
     state = {"sonar": [], "phases": []}
 
     def fake_check(claim, lang="ru", passes=2, title=""):
-        state["sonar"].append(claim)  # list.append is atomic, a counter without a lock
+        state["sonar"].append(claim)  # list.append атомарен — счётчик без lock
         if check_delay:
             time.sleep(check_delay)
         return {"verdict": "правда", "why": "мок-вердикт", "votes": [], "relevant": 0,
@@ -203,27 +203,27 @@ def _mocked_run(monkeypatch, tmp_path, claims: list[dict], *, check_delay: float
 
 
 def test_verdicts_parallel_3_workers(monkeypatch, tmp_path):
-    """6 verdicts × 0.2s over 3 threads ≈ 0.4s, not 1.2s; all saved, the phase reaches 6/6."""
+    """6 вердиктов × 0.2с в 3 потока ≈ 0.4с, а не 1.2с; все сохранены, фаза доходит до 6/6."""
     claims = [_full_claim(i) for i in range(6)]
     run, state = _mocked_run(monkeypatch, tmp_path, claims, check_delay=0.2)
     run_id = run()
     st = pipeline.get_status(run_id)
     assert st["status"] == "done", st.get("error")
     assert state["elapsed"] < 0.6, f"пул не распараллелил: {state['elapsed']:.2f}с"
-    assert len(state["sonar"]) == 6  # call order does not matter, all arrived
+    assert len(state["sonar"]) == 6  # порядок вызовов не важен — все дошли
     assert set(state["sonar"]) == {c["claim"] for c in claims}
     saved = {c["hash"]: c for c in st["claims"]}
     assert len(saved) == 6
-    assert all(c["verdict"] == "правда" for c in saved.values())  # order does not matter, all present
-    assert "verdict 6/6" in state["phases"]  # progress reached the end
+    assert all(c["verdict"] == "правда" for c in saved.values())  # порядок не важен, все на месте
+    assert "verdict 6/6" in state["phases"]  # прогресс дошёл до конца
     assert st["summary"]["checked"] == 6
 
 
 def test_budget_caps_sonar_at_budget_left(monkeypatch, tmp_path):
-    """budget=2 → exactly 2 sonar calls, the other 4 saved without a verdict; settle charged 2."""
+    """budget=2 → ровно 2 sonar-вызова, остальные 4 сохранены без вердикта; settle списал 2."""
     run, state = _mocked_run(monkeypatch, tmp_path, [_full_claim(i) for i in range(6)])
     install = "inst-budget"
-    store.settle(install, store.FREE_DAILY - 2)  # squeeze the quota down to 2
+    store.settle(install, store.FREE_DAILY - 2)  # выжимаем квоту до 2
     assert store.budget(install) == 2
     run_id = run(install)
     st = pipeline.get_status(run_id)
@@ -232,19 +232,19 @@ def test_budget_caps_sonar_at_budget_left(monkeypatch, tmp_path):
     saved = st["claims"]
     assert len(saved) == 6
     assert sum(1 for c in saved if c["verdict"] is not None) == 2
-    assert sum(1 for c in saved if c["verdict"] is None) == 4  # the rest are None
+    assert sum(1 for c in saved if c["verdict"] is None) == 4  # остальные — None
     assert all(c["result"] is None or "claim_meta" in c["result"]
-               for c in saved if c["verdict"] is None)  # extraction metadata is allowed
+               for c in saved if c["verdict"] is None)  # метаданные экстракции допустимы
     assert store.get_or_create_account(install)["free_left_today"] == 0  # settle(install, 2)
 
 
 def test_sonar_failure_does_not_kill_run(monkeypatch, tmp_path):
-    """A failed sonar does not kill the run: the claim is saved without a verdict, the rest are checked."""
+    """Упавший sonar не валит прогон: claim сохранён без вердикта, остальные проверены."""
     claims = [_full_claim(i) for i in range(3)]
     run, state = _mocked_run(monkeypatch, tmp_path, claims)
 
     def flaky_check(claim, lang="ru", passes=2, title=""):
-        if "1" in claim:  # the middle one of three fails
+        if "1" in claim:  # средний из трёх падает
             raise RuntimeError("sonar timeout")
         return {"verdict": "правда", "why": "ок", "votes": [], "relevant": 0,
                 "confidence": "средняя", "engine": "sonar", "passes": ["sonar", "sonar"]}
@@ -254,16 +254,16 @@ def test_sonar_failure_does_not_kill_run(monkeypatch, tmp_path):
     st = pipeline.get_status(run_id)
     assert st["status"] == "done", st.get("error")
     saved = {c["hash"]: c for c in st["claims"]}
-    assert saved["h1"]["verdict"] is None  # the failed one, no verdict
+    assert saved["h1"]["verdict"] is None  # упавший — без вердикта
     assert saved["h0"]["verdict"] == "правда" and saved["h2"]["verdict"] == "правда"
     assert st["summary"]["checked"] == 2
-    assert "verdict 3/3" in state["phases"]  # K counts failed ones as finished too
+    assert "verdict 3/3" in state["phases"]  # K считает и упавшие как завершённые
 
 
-# ── science layer CJK leakage (observed live: why in Chinese against the prompt) ──
+# ── CJK-утечка научного слоя (2026-10-29, живой случай в прогоне про миноксидил) ──
 
 def _plaus_env(monkeypatch, replies):
-    """A plausibility mock: _en_query/_pmc/_openalex are static, llm.chat walks the list."""
+    """Мок plausibility: _en_query/_pmc/_openalex статичны, llm.chat идёт по списку."""
     import videofactcheck.plausibility as pl
     calls = {"n": 0}
 
@@ -274,14 +274,18 @@ def _plaus_env(monkeypatch, replies):
 
     monkeypatch.setattr(pl.llm, "chat", fake_chat)
     monkeypatch.setattr(pl, "_en_query", lambda c, l: "minoxidil hypertension")
+    # abstract содержит цитату NLI: с v0.10 цитата сверяется с абстрактом (verify)
     monkeypatch.setattr(pl, "_pmc",
-                        lambda q: [{"title": "T", "abstract": "A" * 200, "year": "2025", "url": "u"}])
+                        lambda q: [{"title": "T",
+                                    "abstract": "minoxidil was developed as an "
+                                                "antihypertensive " + "A" * 200,
+                                    "year": "2025", "url": "u"}])
     monkeypatch.setattr(pl, "_openalex", lambda q: [])
     return pl, calls
 
 
 def test_plausibility_cjk_retry(monkeypatch):
-    """A Chinese why is retried: the user sees Russian, not 摘要."""
+    """Китайский why переспрашивается: пользователь видит русский, не 摘要."""
     import json as _json
     cjk = _json.dumps({"relation": "supports", "why": "摘要1指出米诺地尔是抗高血压药物。",
                        "quote": "minoxidil was developed as an antihypertensive", "article": 0},
@@ -292,24 +296,24 @@ def test_plausibility_cjk_retry(monkeypatch):
     pl, calls = _plaus_env(monkeypatch, [cjk, good])
     out = pl.check("Миноксидил снижает давление", "ru")
     assert out and out["why"] == "Исследования подтверждают."
-    assert calls["n"] == 2  # the first answer is discarded, the second accepted
+    assert calls["n"] == 2  # первый ответ отброшен, второй принят
 
 
 def test_plausibility_cjk_gives_up(monkeypatch):
-    """Persistent leakage (3 attempts); the layer stays silent, the Chinese block is not shown."""
+    """Устойчивая утечка (3 попытки) — слой молчит, китайский блок не показывается."""
     import json as _json
     cjk = _json.dumps({"relation": "supports", "why": "米诺地尔是有效的血管扩张剂。",
                        "quote": "minoxidil is a vasodilator", "article": 0},
                       ensure_ascii=False)
     pl, calls = _plaus_env(monkeypatch, [cjk])
     assert pl.check("Миноксидил расширяет сосуды", "ru") is None
-    assert calls["n"] == 3  # attempt limit
+    assert calls["n"] == 3  # лимит попыток
 
 
-# ── dilemma step 2: relevance guards + fuse (2026-10-30, v0.7.0) ────────────
+# ── шаг 2 дилеммы: гварды релевантности + fuse (2026-10-30, v0.7.0) ────────────
 
 def _guard_env(monkeypatch, llm_reply, article):
-    """A plausibility mock with a controllable article and NLI reply."""
+    """Мок plausibility с управляемой статьёй и ответом NLI."""
     import json as _json
     import videofactcheck.plausibility as pl
     monkeypatch.setattr(pl.llm, "chat", lambda messages, **kw: llm_reply)
@@ -320,7 +324,9 @@ def _guard_env(monkeypatch, llm_reply, article):
 
 
 def _art(year="2020", kind="primary"):
-    return {"title": "T", "abstract": "A" * 200, "year": year, "url": "u", "kind": kind}
+    # abstract содержит цитату NLI ("quote text"): с v0.10 цитата сверяется с абстрактом
+    return {"title": "T", "abstract": "quote text " + "A" * 200, "year": year,
+            "url": "u", "kind": kind}
 
 
 def _nli(relation="refutes", relevance="directly_on_topic"):
@@ -337,14 +343,14 @@ def test_plaus_relevance_direct_modern_influential(monkeypatch):
 
 
 def test_plaus_relevance_adjacent_never_influential(monkeypatch):
-    """An adjacent article (xerostomia vs withdrawal syndrome): a block without influence."""
+    """Смежная статья (ксеростомия vs синдром отмены) — блок без влияния."""
     pl = _guard_env(monkeypatch, _nli(relevance="adjacent"), _art(year="2024"))
     out = pl.check("X", "ru")
     assert out["relation"] == "refutes" and out["influential"] is False
 
 
 def test_plaus_relevance_missing_defaults_adjacent(monkeypatch):
-    """The NLI gave no relevance; cautious default: not influential."""
+    """NLI не выдал relevance — осторожный дефолт: не влияет."""
     import json as _json
     reply = _json.dumps({"relation": "refutes", "why": "Наука против.",
                          "quote": "q", "article": 0}, ensure_ascii=False)
@@ -354,7 +360,7 @@ def test_plaus_relevance_missing_defaults_adjacent(monkeypatch):
 
 
 def test_plaus_old_primary_blocked_review_passes(monkeypatch):
-    """An old (2012) primary article does not influence; a review of any year does."""
+    """Старая (2012) статья-первоисточник не влияет; обзор любого года — влияет."""
     pl = _guard_env(monkeypatch, _nli(), _art(year="2012", kind="primary"))
     assert pl.check("X", "ru")["influential"] is False
     pl2 = _guard_env(monkeypatch, _nli(), _art(year="2012", kind="review"))
@@ -370,7 +376,7 @@ def test_fuse_downgrades_true_to_strange():
     assert out["verdict"] == "странно" and out["verdict_raw"] == "правда"
     assert out["confidence"] == "низкая" and out["science_flip"] == "refutes"
     assert "Интернет подтверждает." in out["why"] and "Наука против." in out["why"]
-    assert r["verdict"] == "правда"  # the original is not mutated
+    assert r["verdict"] == "правда"  # исходник не мутируется
 
 
 def test_fuse_false_with_supports_and_guards():
@@ -388,8 +394,8 @@ def test_fuse_noop_without_guards():
     for rel, v in (("refutes", "правда"), ("supports", "ложно")):
         r = {"verdict": v, "why": "w", "confidence": "высокая",
              "plausibility": {"relation": rel, "influential": False, "why": "x"}}
-        assert fuse(r, "ru") is r  # without guards, the same object unchanged
-    # science never touches "странно" at all
+        assert fuse(r, "ru") is r  # без гвардов — тот же объект без изменений
+    # «странно» наука не трогает вовсе
     r2 = {"verdict": "странно", "why": "w",
           "plausibility": {"relation": "refutes", "influential": True, "why": "x"}}
     assert fuse(r2, "ru") is r2
