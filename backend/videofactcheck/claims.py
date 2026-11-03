@@ -1,14 +1,14 @@
-"""Stage 1: extraction of checkable claims from transcript segments.
+"""Stage 1: extract checkable claims from transcript segments.
 
-Decisions B10-B11: schema with a verbatim quote and a category, WITHOUT numeric
-specificity; opinions/forecasts/unfalsifiable statements are collected separately
-(as "skip"); dedup uses a normalized hash (embeddings if ever needed).
+Schema decisions: verbatim quote plus category, NO numeric specificity;
+opinions/predictions/unfalsifiable statements are collected separately
+("skipped"); dedup by normalized hash (embeddings later if needed).
 
-2026-10-29: the previous segment goes into the prompt as a [контекст] line (subject
-for anaphora, not a quote source); channel/published go into the prompt context;
-significance filtering happens in a single call (significance 1-5 plus a
-deterministic filter, SIGNIFICANCE_MIN); when category="число", normalized fields
-{subject, indicator, value_norm, unit, year}.
+Update: the previous segment goes into the prompt as a [context] line (subject
+for anaphora, not a quote source); channel/published go into the prompt
+context; significance ranking happens in the same call: significance 1-5 plus
+a deterministic filter (SIGNIFICANCE_MIN); for category "число" the normalized
+fields {subject, indicator, value_norm, unit, year}.
 """
 import hashlib
 import re
@@ -54,9 +54,9 @@ unit (единица: «доля», «руб.», «чел.»), year (явно н
 """
 
 MAX_CLAIMS_PER_VIDEO = 150  # soft storage cap; the whole video is extracted,
-                            # the money budget lives in verdict selection (pipeline)
+                            # the money limit lives in verdict selection (pipeline)
 SIGNIFICANCE_MIN = 3        # selection threshold: lower scores go to skipped with reason "незначимо"
-CONTEXT_TAIL_CHARS = 120    # tail cut of the previous segment for the [контекст] line
+CONTEXT_TAIL_CHARS = 120    # tail cut of the previous segment for the [context] line
 
 
 def normalize(text: str) -> str:
@@ -73,14 +73,14 @@ def claim_hash(claim: str) -> str:
 def extract(segments: list[dict], lang: str = "ru", title: str = "",
             concurrency: int = 4, progress=None, on_batch=None,
             channel: str | None = None, published: str | None = None) -> dict:
-    """Segments → {claims, skipped, batch_errors}. Batches are independent, run
-    them in parallel (ThreadPoolExecutor): a 43-min video = 29 batches, sequential
-    would take 30-60 minutes, interleaved is several times faster. progress(done, total)
-    drives the status.
+    """Segments → {claims, skipped, batch_errors}. Batches are independent, so
+    they run in parallel (ThreadPoolExecutor): a 43-minute video is 29 batches,
+    30-60 minutes sequential, several times faster interleaved. progress(done,
+    total) is for the status display.
 
     channel/published (optional, None-safe) join title in the system prompt
-    context. Claims with significance < SIGNIFICANCE_MIN deterministically go to
-    skipped with reason "незначимо" after parsing (no second LLM call)."""
+    context. Claims with significance < SIGNIFICANCE_MIN deterministically go
+    to skipped with reason "незначимо" (no second LLM call)."""
     from concurrent.futures import ThreadPoolExecutor
 
     claims: list[dict] = []
@@ -107,7 +107,7 @@ def extract(segments: list[dict], lang: str = "ru", title: str = "",
 
     def run_part(part: list[dict], prev: dict | None) -> list[dict]:
         lines = ""
-        if prev is not None:  # anaphora subject from the previous segment, NOT a quote source
+        if prev is not None:  # subject for anaphora from the previous segment, NOT a quote source
             tail = " ".join(prev["text"].split())[-CONTEXT_TAIL_CHARS:]
             lines += f"[контекст] {tail}\n"
         lines += "\n".join(
@@ -132,7 +132,7 @@ def extract(segments: list[dict], lang: str = "ru", title: str = "",
             try:
                 sig = int(c.get("significance"))
             except (TypeError, ValueError):
-                sig = None  # field missing or garbage; do not silently drop the claim
+                sig = None  # field missing or garbage: do not silently drop the claim
             if sig is not None and sig < SIGNIFICANCE_MIN:
                 skipped.append({"quote": (c.get("quote") or "").strip(),
                                 "reason": "незначимо"})
@@ -183,12 +183,12 @@ def extract(segments: list[dict], lang: str = "ru", title: str = "",
             done += 1
             if progress:
                 progress(done, len(parts))
-            # pipeline: a finished batch moves on (ClaimReview) before extraction ends;
-            # runs in this same thread, no races over mutable state
+            # pipeline: a finished batch moves on (ClaimReview) before extraction
+            # ends; runs in this same thread: no races on mutable state
             if on_batch and part_claims:
                 try:
                     on_batch(part_claims)
-                except Exception:  # noqa: BLE001: the pipeline must not kill extraction
+                except Exception:  # noqa: BLE001: the pipeline must not break extraction
                     pass
 
     # dedup: exact repeats by hash + paraphrases (difflib, numbers protected)

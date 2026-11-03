@@ -1,10 +1,10 @@
-"""Scenarios for stages 4-5: verdict voting, the quote rule, domain trust."""
+"""Stage 4-5 scenarios: verdict voting, quote rule, domain trust."""
 from videofactcheck import verdict as ve
 from videofactcheck import trust
 
 
 def test_passes_disagree_gives_strange(monkeypatch):
-    """CR-VD-01: two passes disagreed → "странно", not the last answer."""
+    """Two passes disagree: the verdict is "strange", not the last answer."""
     verdicts = iter(["правда", "ложно"])
     def fake_chat(messages, **kw):
         class T:
@@ -21,7 +21,7 @@ def test_passes_disagree_gives_strange(monkeypatch):
 
 
 def test_vote_without_quote_not_counted(monkeypatch):
-    """B18: a support without a quote does not count as a source."""
+    """A supporting source without a quote is not counted as a vote."""
     import json
     def fake_chat(messages, **kw):
         src = {"title": "T", "url": "https://reuters.com/a", "quote": ""}
@@ -63,7 +63,7 @@ def test_invalid_verdict_name_becomes_strange(monkeypatch):
 def test_trust_domains():
     assert trust.domain_trust("reuters.com") == 1.0
     assert trust.domain_trust("www.reuters.com") == 1.0
-    assert trust.domain_trust("uk.reuters.com") == 1.0       # a subdomain inherits it
-    assert trust.domain_trust("reuters.com.evil.ru") == 0.5  # domain masquerading
+    assert trust.domain_trust("uk.reuters.com") == 1.0       # a subdomain inherits trust
+    assert trust.domain_trust("reuters.com.evil.ru") == 0.5  # a look-alike domain spoof
     assert trust.domain_trust("unknown-site.xyz") == 0.5
     assert trust.domain_trust("naturalnews.com") == 0.1

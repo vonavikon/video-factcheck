@@ -1,7 +1,7 @@
-"""A thin LLM provider abstraction (decision B9): OpenAI-compatible chat.
+"""A thin LLM provider abstraction: OpenAI-compatible chat.
 
 Works with bothub (deepseek-v4-flash) and any OpenAI-compatible endpoint
-(OpenRouter, Selectel) by changing VFC_LLM_BASE_URL/KEY/MODEL; no code changes needed.
+(OpenRouter, Selectel) by changing VFC_LLM_BASE_URL/KEY/MODEL, no code edits.
 """
 import json
 import re
@@ -21,11 +21,11 @@ def chat(
     temperature: float = 0.2,
     retries: int = 2,
 ) -> str:
-    """A single chat/completions call. Returns content (str).
+    """One chat/completions call. Returns content (str).
 
-    model=None → VFC_LLM_MODEL. deepseek-v4-flash is a reasoning model: with a small
-    max_tokens it returns content=null (a lesson from the video-digest bot), hence
-    the 8000 default and retries with doubling on empty content.
+    model=None → VFC_LLM_MODEL. deepseek-v4-flash is a reasoning model: with a
+    small max_tokens it returns content=null, hence the 8000 default and
+    retries with doubling on empty content.
     """
     body: dict = {
         "model": model or config.LLM_MODEL,
@@ -54,14 +54,14 @@ def chat(
                 continue
             try:
                 data = resp.json()
-            except Exception as e:  # broken JSON response, also retried (review P1-3)
+            except Exception as e:  # a broken JSON response is retried too (code review fix)
                 last_err = f"битый JSON ответа: {e}"
                 from . import tracing
                 tracing.log_generation(name="llm", model=body["model"], prompt_tail=messages,
                                        output=None, error=last_err)
                 time.sleep(2 * (attempt + 1))
                 continue
-        except httpx.TransportError as e:  # ConnectError/ReadTimeout, retried so no batch is lost (review P1-3)
+        except httpx.TransportError as e:  # ConnectError/ReadTimeout: retry, do not lose the batch (code review fix)
             last_err = f"транспорт: {type(e).__name__}: {e}"
             from . import tracing
             tracing.log_generation(name="llm", model=body["model"], prompt_tail=messages,
@@ -86,7 +86,7 @@ def chat(
 
 
 def parse_json(text: str) -> dict:
-    """JSON from a model response: strips ``` fences and finds the first object."""
+    """JSON from the model response: strips ``` fences and finds the first object."""
     text = text.strip()
     m = re.search(r"```(?:json)?\s*(.+?)\s*```", text, re.S)
     if m:

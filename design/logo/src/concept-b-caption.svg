@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-  <!-- B. "Subtitle line": a transcript plate whose last "word" is a checkmark.
-       A direct reference to the product mechanic: subtitles → verdicts. -->
+  <!-- B. "Subtitle line": a transcript plate whose last "word" is a check mark.
+       A direct nod to the product mechanics: subtitles -> verdicts. -->
   <rect x="14" y="38" width="100" height="52" rx="14" fill="#16181D"/>
   <rect x="28" y="51" width="52" height="9" rx="4.5" fill="#9AA0A6"/>
   <path d="M30 74 L39 83 L58 60" fill="none" stroke="#2F6FED" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>

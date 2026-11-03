@@ -1,31 +1,32 @@
-// video-factcheck: fact-check panel overlaid on YouTube.
-// Thin client: run status and verdicts synchronized with the player.
-// Logic lives on the vfc server (127.0.0.1:8765); visual rules in design/
-// (tokens.json + review: "soft objects,
-// hard connections").
+// video-factcheck: fact-check panel over YouTube.
+// Thin client: run status and verdicts synced with the player.
+// Logic lives on the vfc server (127.0.0.1:8765); visual rules live in design/
+// (tokens.json + the review reviews/2026-10-28-screens.md: "soft objects,
+// hard links").
 "use strict";
 
-// API: cloud by default; for local development, vfc_api_base in chrome.storage.local
-let API = "http://127.0.0.1:8765";  // cloud will move to HTTPS (mixed-content blocks HTTP from HTTPS pages)
-const API_KEY = "";  // X-API-Key of your server (VFC_API_KEY); not needed for 127.0.0.1
+// API: cloud by default; for local development use vfc_api_base in chrome.storage.local
+let API = "http://127.0.0.1:8765";  // cloud will move to HTTPS (mixed content blocks HTTP from HTTPS pages)
+const API_KEY = "vfc_4852634efe364425b04d9a2b5f26d963";
 (async () => { try { const st = await chrome.storage.local.get("vfc_api_base"); if (st.vfc_api_base) API = st.vfc_api_base; } catch {} })();
 
-// Build mode (decision #6: in the public build the credit-pack and
-// email-mock sections are not rendered in the popover: buttons without a checkout
-// violate CWS policy; balance and "how it works" stay. Dev mode is enabled by the
-// vfc_dev key in chrome.storage.local (also read by options.html); then everything is as before.
+// Build mode (decision 6, docs/decisions-screens.md): in the public build the
+// credit packs and email mock sections are not rendered in the popover, unchecked
+// buttons violate CWS policy; balance and "how it works" stay. Dev mode is enabled
+// by the vfc_dev key in chrome.storage.local (also read by options.html), then
+// everything works as before.
 const PUBLIC_BUILD = true;
 let devMode = false;
 (async () => {
   try { const st = await chrome.storage.local.get("vfc_dev"); devMode = !!st.vfc_dev; } catch {}
-  if (panel) applyBuildMode();  // the panel may exist before the flag is read: adjust now
+  if (panel) applyBuildMode();  // the panel may exist before the flag is read, fix it up here
 })();
 function isPublicBuild() { return PUBLIC_BUILD && !devMode; }
 function applyBuildMode() {
   if (!panel) return;
   const pub = isPublicBuild();
-  panel.auth.classList.toggle("hidden", pub);        // email-mock section (v0): dev mode only
-  panel.creditsSec.classList.toggle("hidden", pub);  // credit-packs section: hidden until real payments
+  panel.auth.classList.toggle("hidden", pub);        // email mock section (v0), dev mode only
+  panel.creditsSec.classList.toggle("hidden", pub);  // credit packs section, hidden until real payments
 }
 const VERDICT_CLASS = { "правда": "v-true", "ложно": "v-false", "странно": "v-strange" };
 const VERDICT_COLOR = { "правда": "#7bd88f", "ложно": "#ff8a80", "странно": "#ffd666" };
@@ -36,19 +37,19 @@ const PROFILE_ICON =
   '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"' +
   ' stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
   '<circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg>';
-// icon on the collapsed circle: a colored frame with a checkmark (logo, design/logo, variant D)
+// icon on the collapsed dot: a colored frame with a check mark (logo, design/logo, variant D)
 const MINI_ICON =
   '<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">' +
   '<rect x="4.1" y="6.4" width="15.8" height="11.2" rx="3" fill="none" stroke="#2F6FED" stroke-width="2.6"/>' +
   '<path d="M8.6 12 L10.9 14.3 L15.7 8.6" fill="none" stroke="#2F6FED" stroke-width="2.6"' +
   ' stroke-linecap="round" stroke-linejoin="round"/></svg>';
-// stack bar segment colors: solid, like on the timeline (design/tokens.json → stack_bar)
+// stack bar segment colors: solid, same as on the timeline (design/tokens.json, stack_bar)
 const BAR_COLOR = { "правда": "#2f9e4f", "ложно": "#e5484d", "странно": "#d9b02f", "не проверено": "#9aa0a6" };
 
-// Panel UI strings. The language is picked once at startup (uiLang with a cache) and
-// is not recalculated on SPA navigation. Verdict and confidence keys are backend
-// data (Russian literals): VERDICT_CLASS/VERDICT_COLOR keep the Russian values,
-// only the output is translated (verdictLabel/confLabel).
+// Panel UI strings. The language is picked once at startup (uiLang with a cache)
+// and is not recomputed on SPA navigation. Verdict keys ("правда"/"ложно"/"странно")
+// and confidence keys ("высокая"...) are backend data: VERDICT_CLASS/VERDICT_COLOR
+// keep the Russian values, only the output is translated (verdictLabel/confLabel).
 const I18N = {
   ru: {
     panelAria: "Факт-чек видео",
@@ -266,7 +267,7 @@ const I18N = {
 
 let langCache = null;
 function uiLang() {
-  // panel language: YouTube's html[lang] takes priority over the browser language
+  // panel language: YouTube html[lang] takes priority over the browser language
   if (langCache) return langCache;
   const html = (document.documentElement.lang || "").toLowerCase();
   const nav = (navigator.language || "").toLowerCase();
@@ -290,34 +291,35 @@ function confLabel(level) {
 }
 
 // panel state; every reset (startCheck, SPA navigation) goes through freshState
-// so new feed fields are not lost during partial enumeration
+// so new feed fields are not lost on partial reassignment
 function freshState(videoId) {
   return {
     runId: null, videoId: videoId || null, claims: [], pollTimer: null,
     seen: new Set(), userScrolled: false, startedAt: null, expanded: new Set(),
-    done: false,  // run finished (done or restored history): the button does not restart
-    filter: null,  // active feed filter: null | a verdict key | the unchecked key
-    transcript: null,  // subtitles from grabTranscript; null → yt-dlp fallback, feed without text
-    feedMode: "text",  // feed mode (feature A): "text" = transcript+facts, "facts" = cards only
-    unfolded: new Set(),  // 30-second transcript groups unfolded via the "··· N more" control
+    done: false,  // run finished (done or restored history), the button does not restart
+    filter: null,  // active feed filter: null | "правда" | "ложно" | "странно" | "не проверено"
+    transcript: null,  // subtitles from grabTranscript; null means a yt-dlp fallback and a textless feed
+    feedMode: "text",  // feed mode (feature A): "text" is transcript plus facts, "facts" is cards only
+    unfolded: new Set(),  // 30-second transcript groups expanded by clicking "... N more"
   };
 }
 let panel, feed, state = freshState(null);
 
-// panel modes (conspect pattern): "hidden" = no panel at all, "mini" = circle,
-// "full" = window. No panel by default: it is opened only via the button under the video
+// panel modes (the floating-dot panel pattern): "hidden" means no panel at all,
+// "mini" is the dot, "full" is the window. No panel by default: the check starts
+// only from the button under the video
 let panelMode = "hidden";
-let timeHooked = null;  // video element with timeupdate already attached (dedup)
-let bootPromise = null; // history/run read on video entry; a click waits for it (anti-race, case 11)
+let timeHooked = null;  // video element that already has timeupdate attached (no duplicates)
+let bootPromise = null; // history/run read on entering a video; a click waits for it (anti-race, ux risk 11)
 let navEpoch = 0;       // SPA page generation: grows on URL change; async chains
                         // compare the epoch after await and never write into a foreign state (review P1-1)
 
 function setPanelMode(m) {
   if (!panel || m === panelMode) return;
-  if (m !== "mini") setMiniDone(false);  // expanding/hiding clears the "result ready" badge
+  if (m !== "mini") setMiniDone(false);  // expanding or hiding clears the "result ready" badge
   if (m === "hidden") {
-    // short fade, then display:none; exit is faster than entry, but not to zero frames.
-    // guard: the panel may have been reopened meanwhile, so it must not close (× vs open race)
+    // short fade, then display:none: exit is faster than entry but not zero frames.
+    // guard: the panel may have been opened again, then it must not close (x vs open race)
     panel.root.classList.add("hiding");
     setTimeout(() => {
       if (!panel || panelMode !== "hidden") return;
@@ -333,13 +335,13 @@ function setPanelMode(m) {
   syncMiniBusy();
 }
 function syncMiniBusy() {
-  // the circle pulses while a run is in progress (cpulse in conspect)
+  // the dot pulses while a run is in progress (the busy pulse of the floating dot)
   if (!panel || !panel.mini) return;
   panel.mini.classList.toggle("busy", !!(panel.run && panel.run.disabled));
 }
 function setMiniDone(on) {
-  // "result ready" badge on the collapsed circle (mini-circle-done-state): a green
-  // checkmark on top when the background run has finished; a click on the circle expands
+  // "result ready" badge on the collapsed dot (mini-circle-done-state): a green
+  // check mark on top when a background run finished; clicking the dot expands
   if (!panel || !panel.mini) return;
   panel.mini.classList.toggle("done", !!on);
   const label = on ? tr("miniDoneAria") : tr("miniExpandAria");
@@ -371,23 +373,23 @@ const CSS = `
     transition: width .28s cubic-bezier(.2,.8,.3,1), height .28s cubic-bezier(.2,.8,.3,1),
       border-radius .28s cubic-bezier(.2,.8,.3,1);
   }
-  /* content lives in a clipped wrapper: the panel itself does not clip, so the ×
-     of the collapsed circle sticks out beyond the radius (cp-x pattern in conspect) */
+  /* content lives in a wrapper with a clip: the panel itself does not clip, so the ×
+     of the collapsed dot sticks out past the radius (the close-cross on the collapsed dot) */
   .panel-in {
     position: relative; display: flex; flex-direction: column; min-height: 0; min-width: 0;
     overflow: hidden; border-radius: inherit;
     transform-origin: top right;
-    /* appearance: after expansion, with a slight scale-up: lines do not rearrange before your eyes */
+    /* appearance follows expansion with a slight scale-up: lines do not reflow in plain sight */
     transition: opacity .16s ease .12s, transform .2s cubic-bezier(.2,.8,.3,1) .1s;
   }
   @keyframes panel-in { from { transform: translateX(24px); } }
-  /* panel modes (conspect pattern): closed = no panel at all, mini = circle.
-     A morph of the same panel in pure CSS: width 340→52 and height auto→52 (interpolate-size
-     removed the max-height dead zone: the height used to freeze, then catch up with a jerk),
-     border-radius in px only (12→26): a percentage radius on the intermediate
-     non-square box produced an ellipse. No JS height measuring: inline
-     fixators got stuck (bug v0.6.1); in older Chrome height snaps instantly,
-     width/radius travel: graceful degradation without sticking */
+  /* panel modes (the floating-dot panel pattern): closed means no panel, mini is the dot.
+     The same panel morphs in pure CSS: width 340 to 52 and height auto to 52 (interpolate-size
+     removed the max-height dead zone: before, the height froze and then jumped to catch up),
+     border-radius in px only (12 to 26): a percentage radius on the intermediate
+     non-square box produced an ellipse. No JS height measuring: the inline
+     fixtures got stuck (bug v0.6.1); in older Chrome height snaps instantly,
+     width and radius still animate, a degradation without stuck states */
   .panel.closed { display: none; }
   .panel.hiding { opacity: 0; transition: opacity .12s ease; }
   .panel.mini { width: 52px; height: 52px; border-radius: 26px; }
@@ -410,13 +412,13 @@ const CSS = `
   .mini-circle:focus-visible { outline: 2px solid #3ea6ff; outline-offset: 2px; }
   .mini-ico { display: inline-flex; color: #e8e8e8; }
   .mini-circle.busy .mini-ico { color: #ffd66e; }
-  /* pulse: only when the circle is actually visible (not pointlessly in full mode) */
+  /* pulse only when the dot is actually visible (not pointlessly in full mode) */
   .panel.mini .mini-circle.busy { animation: mini-pulse 1.8s ease-in-out infinite; }
   @keyframes mini-pulse {
     0%, 100% { box-shadow: 0 0 0 4px rgba(245,166,35,.10), 0 0 18px rgba(245,166,35,.25); }
     50% { box-shadow: 0 0 0 6px rgba(245,166,35,.16), 0 0 22px rgba(245,166,35,.4); }
   }
-  /* × on the collapsed circle: visible on hover, hides the panel entirely (cp-x in conspect).
+  /* × on the collapsed dot: visible on hover, hides the whole panel (the close-cross on the collapsed dot).
      24px is the minimum WCAG SC 2.5.8 target */
   .mini-x {
     position: absolute; top: -8px; right: -8px; width: 24px; height: 24px; padding: 0;
@@ -427,8 +429,8 @@ const CSS = `
   }
   .mini-circle:hover .mini-x, .mini-x:focus-visible { opacity: 1; }
   .mini-x:hover { background: #e25c5c; color: #16090b; border-color: #e25c5c; }
-  /* "result ready" badge (mini-circle-done-state): the background run finished
-     while the panel is collapsed: a green checkmark over the circle; a click expands the result */
+  /* "result ready" badge (mini-circle-done-state): a background run finished
+     while the panel was collapsed, a green check mark over the dot; a click expands the result */
   .mini-done {
     position: absolute; right: -3px; bottom: -3px; width: 18px; height: 18px; border-radius: 50%;
     background: #2f9e4f; color: #0f1512; font: 700 11px/18px Roboto, "Segoe UI", system-ui, sans-serif;
@@ -452,7 +454,7 @@ const CSS = `
   button.run:hover:not(:disabled) { filter: brightness(1.12); }
   button.run:active:not(:disabled) { transform: scale(.97); }
   button.run:disabled { background: #5a3a38; cursor: default; }
-  /* thin progress ring of a running check: cone by the i/N counter, pulse when there is no data */
+  /* thin progress ring of a running check: an i/N cone, or a pulse when there is no data */
   button.run.ringed::after, button.run.pulse::after {
     content: ""; position: absolute; inset: -3px; border-radius: 999px; padding: 2px;
     pointer-events: none;
@@ -468,7 +470,7 @@ const CSS = `
   }
   @keyframes run-pulse { 0%, 100% { opacity: .35; } 50% { opacity: 1; } }
   button.fold { background: none; border: none; color: #9aa0a6; padding: 2px 8px; font-size: 15px; cursor: pointer; border-radius: 8px;
-    transition: color .12s, background-color .12s; }  /* unified hover timing with all panel buttons */
+    transition: color .12s, background-color .12s; }  /* one hover pace shared with all panel buttons */
   button.fold:hover { color: #e8e8e8; background: #1a1d23; }
   button.fold.close { font-size: 16px; }
   button.fold.close:hover { color: #ff8a80; }
@@ -483,8 +485,8 @@ const CSS = `
   .status.err { color: #ff8a80; }
   .spin { width: 11px; height: 11px; border-radius: 50%; border: 2px solid #2c2f36; border-top-color: #9aa0a6; animation: spin .9s linear infinite; flex: none; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  /* stack bar, the "video truth bar": verdict shares + number labels under it;
-     segments and labels are feed filters (fix 9): the active one is highlighted, the rest dim */
+  /* the "video truth bar" stack bar: verdict shares plus number labels under it;
+     segments and labels act as feed filters (fix 9): the active one is lit, the rest dim */
   .counts { padding: 9px 12px 8px; font-size: 11px; border-bottom: 1px solid #2c2f36; }
   .stackbar { display: flex; height: 6px; border-radius: 3px; overflow: hidden; }
   .stackbar i { display: block; height: 100%; min-width: 2px; }
@@ -501,8 +503,8 @@ const CSS = `
   .sn.zero, .sn:disabled { cursor: default; opacity: .6; }
   .sn.active { background: #22262e; color: #dfe3e8; }
   .sn.active b { color: #fff; }
-  /* "free checks exhausted" banner (decision #9): the yellow v-strange pair,
-     no "Continue with credits" button until real payments */
+  /* "free checks are over" banner (decision 9): the yellow v-strange pair,
+     without a "Continue with credits" button until real payments ship */
   .quota {
     margin: 8px 12px 0; padding: 7px 10px; border-radius: 8px;
     background: #3a331a; border: 1px solid #575032; color: #ffd666;
@@ -515,7 +517,7 @@ const CSS = `
   .card.expandable { cursor: pointer; }
   .card .statebg { border-radius: 8px; margin: 0 3px; padding: 8px 9px; transition: background-color .12s; position: relative; }
   .card:hover .statebg { background: #1a1d23; }
-  /* left rail in the verdict color on each card; the current one is wider and has a background */
+  /* left rail in the verdict color on every card; the current one is wider with a background */
   .card .statebg::before {
     content: ""; position: absolute; left: -3px; top: 6px; bottom: 6px; width: 2px;
     border-radius: 1px; background: var(--rail, #9aa0a6);
@@ -523,7 +525,7 @@ const CSS = `
   .card.skel .statebg::before { content: none; }
   .card.now .statebg { background: #22262e; }
   .card.now .statebg::before { width: 3px; }
-  /* expanded card (fix 8): more air, a deeper background, 4px rail */
+  /* expanded card (fix 8): more air, deeper background, 4px rail */
   .card.expanded .statebg { background: #1d2027; padding: 14px 9px; }
   .card.expanded .statebg::before { width: 4px; }
   .card.new .statebg { animation: arrive .18s ease-out; }
@@ -538,8 +540,8 @@ const CSS = `
   .badge { font-size: 11px; font-weight: 700; padding: 1px 9px; border-radius: 999px; white-space: nowrap; min-width: 64px; text-align: center; }
   .v-true { background: #1d3a24; color: #7bd88f; } .v-false { background: #3d1a18; color: #ff8a80; }
   .v-strange { background: #3a331a; color: #ffd666; } .v-none { background: #26292f; color: #9aa0a6; }
-  /* confidence scale (fix 6): three 18×4 segments with a 2px gap, below them
-     a 10px level label in the level's color; the color is set inline on .conf */
+  /* confidence scale (fix 6): three 18x4 segments with a 2px gap, below them
+     a 10px level label in the level color; the color is set inline on .conf */
   .conf { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 3px; margin-left: auto; }
   .conf .segs { display: inline-flex; gap: 2px; }
   .conf i { width: 18px; height: 4px; border-radius: 2px; background: #2c2f36; display: inline-block; }
@@ -548,14 +550,14 @@ const CSS = `
   .claim { margin: 4px 0 2px; color: #dfe3e8; font-size: 13px; }
   .claim.clamp { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .why { color: #9aa0a6; font-size: 12px; margin: 2px 0; }
-  /* scientific data (stage 2.5): a blue left trace: science, not a verdict */
+  /* science data (stage 2.5): a blue left trace for science, not a verdict */
   .plaus { margin: 3px 0 2px; padding: 4px 8px; border-left: 2px solid #2F6FED;
     background: #1c1f26; border-radius: 0 8px 8px 0; font-size: 11.5px; line-height: 1.45; }
   .plaus-head { color: #7f9bf3; font-weight: 600; }
   .plaus-why { color: #9aa0a6; }
   .plaus-src { color: #3ea6ff; text-decoration: none; margin-left: 4px; }
   .plaus-src:hover { text-decoration: underline; }
-  /* pass divergence (fix 7): each pass's conclusion on its own line */
+  /* split passes (fix 7): the output of each pass on its own line */
   .why.split .sphead { color: #ffd666; }
   .why.split .spline { margin-top: 2px; }
   .why.split .spline b { font-weight: 600; }
@@ -563,8 +565,8 @@ const CSS = `
   .srcs a { color: #3ea6ff; text-decoration: none; margin-right: 8px; transition: color .12s; }
   .srcs a:hover { text-decoration: underline; }
   .srcs .more { color: #9aa0a6; cursor: pointer; }
-  /* source weight (dilemma step 1): science = the blue pair of the plaus block,
-     official organizations = the green v-true pair */
+  /* source weight (dilemma step 1): science uses the blue pair of the plaus block,
+     official organizations use the green v-true pair */
   .srckind { display: inline-block; font-size: 9px; font-weight: 700; line-height: 1;
     padding: 2px 5px; border-radius: 999px; margin-right: 4px; vertical-align: 1px;
     white-space: nowrap; text-transform: uppercase; letter-spacing: .02em; }
@@ -572,7 +574,7 @@ const CSS = `
   .srckind.org { background: #1d3a24; color: #7bd88f; }
   /* sonar explanation prefix when it conflicts with science */
   .sonar-tag { color: #7c828a; }
-  /* sources of the expanded card (fix 8): each one is a separate block with the full quote */
+  /* sources of an expanded card (fix 8): each one is a separate block with the full quote */
   .srcbox { margin-top: 8px; padding: 8px 10px; background: #16181d; border: 1px solid #2c2f36; border-radius: 8px; }
   .srcbox + .srcbox { margin-top: 6px; }
   .srcbox-head { font-size: 11px; color: #9aa0a6; }
@@ -587,19 +589,19 @@ const CSS = `
   .pop input:focus-visible { outline: 2px solid #3ea6ff; outline-offset: 1px; }
   .empty { color: #9aa0a6; padding: 20px 14px; text-align: center; font-size: 12px; line-height: 1.6; }
   .empty b { color: #dfe3e8; font-weight: 500; }
-  /* "how it works" link on the "limit exhausted" screen: a centered link-button */
+  /* "how it works" link on the "limit used up" screen: a centered link button */
   .empty .how { display: inline-block; width: auto; padding: 8px 0 0; }
-  /* idle: a mini verdict legend + the balance line */
+  /* idle: a mini verdict legend plus the balance line */
   .idlebox { padding: 18px 14px 14px; text-align: center; }
   .legend { display: flex; justify-content: center; gap: 14px; margin-bottom: 8px; }
   .lg { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; color: #9aa0a6; }
   .lg i { width: 7px; height: 7px; border-radius: 50%; flex: none; }
   .idlebal { font-size: 12px; color: #7c828a; min-height: 16px; font-variant-numeric: tabular-nums; }
-  /* non-blocking warning about a parallel run (decision #3) */
+  /* non-blocking warning about a parallel run (decision 3) */
   .warnbox { padding: 16px 14px; }
   .warntext { color: #dfe3e8; font-size: 12.5px; line-height: 1.5; margin-bottom: 10px; }
   .warnbtns { display: flex; gap: 6px; }
-  /* account popover in shadow DOM */
+  /* account popover inside the shadow DOM */
   .pop { position: absolute; top: 52px; right: 10px; width: 264px; background: #1a1d23;
     border: 1px solid #2c2f36; border-radius: 10px; box-shadow: -4px 4px 14px rgba(0,0,0,.4);
     padding: 4px 0 5px; z-index: 5; animation: pop-in .14s ease-out both; }
@@ -625,7 +627,7 @@ const CSS = `
   #vfc-vlang { background: #22262e; color: #dfe3e8; border: 1px solid #2c2f36; border-radius: 8px;
     font: 500 12px Roboto, "Segoe UI", system-ui, sans-serif; padding: 3px 6px; cursor: pointer; }
   .vlanghint { color: #868c94; font-size: 10.5px; margin-top: 4px; }
-  /* zero balance in the popover (decision #2): the same hint + a link to the explanation */
+  /* zero balance in the popover (decision 2): the same hint plus a link to the explanation */
   .bal-empty { margin-top: 7px; font-size: 11px; color: #ffd666; line-height: 1.45; }
   .bal-empty a { color: #3ea6ff; text-decoration: none; cursor: pointer; }
   .bal-empty a:hover { text-decoration: underline; }
@@ -664,18 +666,18 @@ const CSS = `
   /* transcript feed (feature A): "[M:SS] text" lines, more compact than cards */
   .tgroup { padding: 5px 0 1px; }
   .tgroup + .tgroup { margin-top: 4px; border-top: 1px solid #1e2126; }
-  /* one shared grid with the cards: the timecode in a 46px column sits on the same
-     24px vertical as the fact cards (.card 12 + statebg 3+9); right alignment keeps
-     a solid wall of timecodes, line text and the card badge start on the same vertical */
+  /* one grid shared with cards: the timecode in a 46px column on the 24px baseline,
+     the same as fact cards (.card 12 + statebg 3+9); right alignment keeps
+     a wall of timecodes, line text and the card badge start on the same vertical */
   .tline { display: flex; align-items: baseline; gap: 7px; padding: 1px 12px 1px 24px; }
   .tline .ts { flex: none; min-height: 0; margin: 0; font-size: 11px; }
   .tline .ttext { color: #9aa0a6; font-size: 12px; line-height: 1.45; min-width: 0; }
   .tmore { padding: 6px 12px 6px 24px; color: #7c828a; font-size: 11px; cursor: pointer; user-select: none; transition: color .12s; }
   .tmore:hover { color: #dfe3e8; }
-  /* conspect card for an unchecked claim (feature C): verbatim quote + category */
+  /* note card for an unchecked claim (feature C): verbatim quote plus category */
   .tquote { margin: 4px 0 2px; color: #9aa0a6; font-size: 12px; line-height: 1.5; }
   .tcat { margin-top: 2px; color: #7c828a; font-size: 11px; }
-  /* "Download .md" (feature B): in the header next to the fold button */
+  /* "Download .md" (feature B): in the header next to the fold */
   button.dl { background: none; border: none; color: #9aa0a6; padding: 2px 8px; font-size: 16px;
     cursor: pointer; border-radius: 8px; }
   button.dl:hover { color: #e8e8e8; background: #1a1d23; }
@@ -698,7 +700,7 @@ const CSS = `
 `;
 
 function idleMarkup() {
-  // feed idle state: a mini verdict legend + the balance line (filled in by showBalance)
+  // idle feed state: a mini verdict legend plus the balance line (filled by showBalance)
   const L = I18N[uiLang()];
   const dot = (v, label) => `<span class="lg"><i style="background:${VERDICT_COLOR[v]}"></i>${label}</span>`;
   return `<div class="idlebox"><div class="legend">` +
@@ -710,9 +712,9 @@ function ensurePanel(force) {
   const onWatch = !!getVideoId();
   const existing = document.getElementById("vfc-host");
   if (!onWatch && !force) {
-    if (existing) existing.remove();  // by default the panel lives only on video pages;
+    if (existing) existing.remove();  // the panel lives automatically only on video pages;
     panel = null;                     // force (the toolbar icon) opens it anywhere: on /shorts
-    return;                           // and off-video an honest refusal is shown by startCheck (case 9)
+    return;                           // and off-video an honest refusal comes from startCheck (ux risk 9)
   }
   if (panel && existing) return;
   if (existing) existing.remove();
@@ -806,9 +808,9 @@ function ensurePanel(force) {
     packs: Array.from(shadow.querySelectorAll(".pack")),
     toast: shadow.querySelector("#vfc-toast"),
   };
-  panel.run.addEventListener("click", () => startCheck());  // no force: an event must not override the warning
+  panel.run.addEventListener("click", () => startCheck());  // no force: the event must not substitute it
   panel.dl.addEventListener("click", downloadMarkdown);  // feature B: protocol export
-  // "Text / Facts" (feature A): switching re-renders the feed in the current mode
+  // "Text / Facts" (feature A): the toggle re-renders the feed in the current mode
   panel.feedtabs.querySelectorAll(".ftab").forEach((b) => b.addEventListener("click", () => {
     if (state.feedMode === b.dataset.m) return;
     state.feedMode = b.dataset.m;
@@ -828,16 +830,16 @@ function ensurePanel(force) {
     panel.howbody.classList.remove("hidden");
     panel.how.setAttribute("aria-expanded", "true");
   });
-  applyBuildMode();  // PUBLIC_BUILD: the public build hides the mock and the packs (decision #6)
-  // check language (the language of verdict explanations): auto = browser locale; stored
-  // in chrome.storage, applied to new runs
+  applyBuildMode();  // PUBLIC_BUILD: the public build hides the mock and the packs (decision 6)
+  // check language (the language of verdict explanations): auto means the browser
+  // locale; stored in chrome.storage, applied to new runs
   panel.vlang.addEventListener("change", async () => {
     try { await chrome.storage.local.set({ vfc_verdict_lang: panel.vlang.value }); } catch {}
   });
   bindPopDismissals();
   panel.fold.addEventListener("click", () => setPanelMode(panelMode === "mini" ? "full" : "mini"));
   panel.close.addEventListener("click", () => setPanelMode("hidden"));
-  // circle: a click expands, × on hover hides the panel entirely (conspect pattern)
+  // the dot: a click expands, × on hover hides the whole panel (the floating-dot panel pattern)
   panel.mini.addEventListener("click", () => setPanelMode("full"));
   panel.mini.addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPanelMode("full"); }
@@ -849,22 +851,22 @@ function ensurePanel(force) {
   });
   document.body.appendChild(host);
   const video = getVideoEl();
-  // timeupdate is attached once per video element: re-creating the panel spawns no duplicates
+  // timeupdate is attached to the video element once: re-creating the panel adds no duplicates
   if (video && timeHooked !== video) {
     video.addEventListener("timeupdate", onTimeUpdate);
     timeHooked = video;
   }
-  // the panel is hidden by default; auto-open happens only if an unfinished run
-  // lives on the video (returned to a check); a finished history does not open the panel.
-  // bootPromise holds the read: a quick button click waits for it so that the
-  // "already checked" guard decides on restored data, not on an empty state (case 11)
+  // the panel is hidden by default; auto-open happens only when an unfinished
+  // run lives on the video (returned to a check), a finished history does not open the panel.
+  // bootPromise holds the read: a quick button click waits for it so the
+  // "already checked" guard decides on restored data, not on an empty state (ux risk 11)
   bootPromise = resumeStoredRun().then((resumed) => {
     if (resumed) { setPanelMode("full"); return; }
     return restoreHistory(getVideoId());
   });
-  syncFeedTabs();  // the transcript may remain in state (YouTube wiped the panel mid-video)
+  syncFeedTabs();  // a transcript may remain in state (YouTube wiped the panel mid-video)
   syncDlButton();
-  showBalance();  // also sets the server status micro-label in the header
+  showBalance();  // also sets the tiny server status caption in the header
 }
 
 function fmtTS(sec) {
@@ -872,7 +874,7 @@ function fmtTS(sec) {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 function seekTo(sec) {
-  // seek the player in place, no link navigation, no reload (fix 3)
+  // seeks the player in place, no link navigation or reload (fix 3)
   const video = getVideoEl();
   if (!video || !isFinite(sec) || sec < 0) return false;
   video.currentTime = sec;
@@ -883,11 +885,11 @@ function fmtElapsed(ms) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-// --- Transcript streaming (feature A): cue preparation ---
+// --- Transcript streaming (feature A): preparing cues ---
 
 function dedupCues(cues) {
-  // rolling repeats of auto-subtitles: text N equals N-1 → skip;
-  // N-1 is contained in N → take N (the line has grown into the full one)
+  // rolling repeats of auto subtitles: text N equals N-1, skip;
+  // N-1 is contained in N, take N (the line has grown into the full one)
   const out = [];
   for (const c of cues) {
     const prev = out[out.length - 1];
@@ -901,7 +903,7 @@ function dedupCues(cues) {
 }
 
 function groupCues(dc) {
-  // ~30 sec groups: bucket = floor(start/30); cues holds line indexes into dc
+  // groups of about 30 seconds: bucket = floor(start/30); cues holds line indexes into dc
   const groups = [];
   for (let k = 0; k < dc.length; k++) {
     const b = Math.floor((dc[k].start || 0) / 30);
@@ -913,7 +915,7 @@ function groupCues(dc) {
 }
 
 function nearestCueIndex(cues, t) {
-  // binary search: the last cue with start <= t; t before the first cue → 0
+  // binary search: the last cue with start <= t; t before the first cue gives 0
   let lo = 0, hi = cues.length - 1, res = 0;
   while (lo <= hi) {
     const mid = (lo + hi) >> 1;
@@ -923,7 +925,7 @@ function nearestCueIndex(cues, t) {
 }
 
 function moreFragsLabel(n) {
-  // "··· N more fragments" with Russian declension; en goes through the I18N template
+  // "... N more fragments" with Russian plural rules; en goes through the I18N template
   if (uiLang() !== "ru") return tr("moreFrags", { n });
   const a = n % 10, b = n % 100;
   const w = (a === 1 && b !== 11) ? "фрагмент"
@@ -959,7 +961,7 @@ function onTimeUpdate() {
 }
 
 function requestPlayerData() {
-  // bridge from the MAIN world (page-bridge.js): caption tracks + video metadata
+  // bridge from the MAIN world (page-bridge.js): caption tracks plus video metadata
   return new Promise((resolve) => {
     let done = false;
     const handler = (e) => {
@@ -974,17 +976,18 @@ function requestPlayerData() {
 }
 
 async function fetchTimedText(tracks, vd, vid, dbg) {
-  // direct timed_text: the most precise timings; since October 2026 YouTube most often
-  // returns an empty 200, but it still works for some videos/languages: always tried first
+  // direct timed_text: the most precise timings; since October 2026 YouTube most
+  // often returns an empty 200, but it still works for some videos and languages,
+  // so always try it first
   const pick = tracks.find((t) => /^ru/.test(t.languageCode || ""))
             || tracks.find((t) => /^en/.test(t.languageCode || ""))
             || tracks[0];
   if (!pick) return null;
   let bu = null;
-  try { bu = new URL(pick.baseUrl); } catch { dbg("invalid baseUrl"); return null; }
+  try { bu = new URL(pick.baseUrl); } catch { dbg("baseUrl is invalid"); return null; }
   if (!/(^|\.)youtube\.com$/.test(bu.hostname)) { dbg("not youtube.com: " + bu.hostname); return null; }
   bu.searchParams.set("fmt", "json3");
-  dbg("downloading timed_text: " + bu.pathname);
+  dbg("fetching timed_text: " + bu.pathname);
   const r = await fetch(bu.toString(), { credentials: "same-origin" });
   if (!r.ok) { dbg("timed_text HTTP " + r.status); return null; }
   const j = await r.json().catch(() => null);
@@ -1009,37 +1012,37 @@ async function fetchTimedText(tracks, vd, vid, dbg) {
 }
 
 async function grabTranscript() {
-  // Subtitle reading cascade (October 2026: YouTube shut down direct timed_text;
-  // an empty 200 on baseUrl, and get_transcript requires the browser's proof-of-origin token):
-  //   0) MAIN-world bridge (page-bridge.js): captionTracks + videoDetails of the live page,
-  //      without downloading 1.5 MB of HTML (review P1-3: the bridge was dead weight)
-  //   1) timed_text json3 over the bridge tracks, maybe it still works for this video
-  //   2) the transcript DOM panel: a programmatic click, YouTube fetches with its own tokens
-  //   3) fetch the page → timed_text over the HTML tracks → get_transcript (InnerTube
-  //      with cookies and the ytcfg context), the heaviest path, tried last
-  //   4) null → the server will fetch via yt-dlp (fallback, catches datacenter 429s)
+  // Subtitle reading cascade (October 2026: YouTube closed direct timed_text,
+  // an empty 200 on baseUrl, and get_transcript needs a browser proof-of-origin token):
+  //   0) MAIN-world bridge (page-bridge.js): captionTracks + videoDetails of the
+  //      live page, without downloading 1.5 MB of HTML (review P1-3: the bridge was dead weight)
+  //   1) timed_text json3 over the bridge tracks, in case it still works for this video
+  //   2) the "Transcript" DOM panel: a programmatic click, YouTube fetches with its own tokens
+  //   3) page fetch, then timed_text over the HTML tracks, then get_transcript (InnerTube
+  //      with cookies and the ytcfg context): the heaviest path, tried last
+  //   4) null, then the server pulls via yt-dlp (fallback, catches datacenter 429s)
   const dbg = (msg) => { console.log("[VFC:transcript]", msg); return null; };
   try {
     const vid = getVideoId();
     if (!vid) return dbg("no videoId");
 
-    // path 0: bridge from the MAIN world
+    // path 0: the MAIN-world bridge
     const bridge = await requestPlayerData();
     const tracks0 = (bridge && bridge.captions) || [];
     const vd = (bridge && bridge.videoDetails) || {};
-    dbg("bridge: " + tracks0.length + " track(s)" + (bridge ? "" : " (no response)"));
+    dbg("bridge tracks: " + tracks0.length + (bridge ? "" : " (no answer)"));
 
-    // path 1: timed_text over the bridge tracks, no page fetch
+    // path 1: timed_text over the bridge tracks, without fetching the page
     if (tracks0.length) {
       const viaTT = await fetchTimedText(tracks0, vd, vid, dbg);
       if (viaTT) return viaTT;
     }
 
-    // path 2: the transcript DOM panel; metadata already came from the bridge
+    // path 2: the transcript DOM panel, metadata already comes from the bridge
     const viaDom = await fetchTranscriptViaDomPanel(vd, vid, dbg);
     if (viaDom) return viaDom;
 
-    // path 3: fetch the page; need the tracks from the HTML and the get_transcript params
+    // path 3: download the page, we need the tracks from the HTML and the get_transcript params
     dbg("page fetch " + vid + "…");
     const page = await fetch(`https://www.youtube.com/watch?v=${encodeURIComponent(vid)}`, {
       credentials: "same-origin",
@@ -1066,7 +1069,7 @@ async function grabTranscript() {
     if (viaGte) return viaGte;
 
     if (!tracks.length && !tracks0.length) return dbg("the video has no subtitles");
-    return dbg("all client paths are empty — the server fallback remains");
+    return dbg("all client paths empty, the server fallback remains");
   } catch (e) {
     return dbg("exception: " + e.message);
   }
@@ -1074,7 +1077,7 @@ async function grabTranscript() {
 
 function closeTranscriptPanel() {
   // hide the transcript panel we opened to collect segments.
-  // Verify the result: if the visibility button was not found / did not work, Esc is dispatched
+  // verify the result: if the visibility button was not found or failed, press Esc
   const vis = document.querySelector(
     'ytd-engagement-panel-section-list-renderer[target-id="engagement-panel-searchable-transcript"] #visibility-button button');
   if (vis) vis.click();
@@ -1087,8 +1090,8 @@ function closeTranscriptPanel() {
 
 async function fetchTranscriptViaDomPanel(vd, vid, dbg) {
   // The "Show transcript" panel: a programmatic click on the button in the description,
-  // YouTube fetches the transcript with all its tokens itself, we read the ready segments.
-  // Side effects are minimized: the description is returned to its original state (review P1-4)
+  // YouTube fetches the transcript with all its tokens, we read the ready segments.
+  // Side effects are minimized: the description goes back to its original state (review P1-4)
   let descWasCollapsed = false;
   try {
     const expander = document.querySelector("#description-inline-expander, ytd-text-inline-expander");
@@ -1152,8 +1155,8 @@ async function fetchTranscriptViaDomPanel(vd, vid, dbg) {
 }
 
 function balancedJsonFrom(html, fromIdx) {
-  // cuts out a balanced {...} from position fromIdx (the first '{'); strings and
-  // escapes inside are accounted for: ytInitialData/ytcfg cannot be taken by a regex (nesting)
+  // cuts a balanced {...} from position fromIdx (the first '{'); strings and
+  // escapes inside are handled, a regex cannot take ytInitialData/ytcfg (nesting)
   let depth = 0, inStr = false, esc = false;
   for (let i = fromIdx; i < html.length; i++) {
     const ch = html[i];
@@ -1181,9 +1184,9 @@ function collectTranscriptSegments(node, out) {
 }
 
 async function fetchTranscriptEndpoint(html, vd, vid, dbg) {
-  // POST /youtubei/v1/get_transcript with the live page's params. It cannot be
-  // reproduced from curl (Precondition failed without a cookie session); inside the page
-  // a same-origin fetch carries cookies and visitorData, like the "Transcript" button.
+  // POST /youtubei/v1/get_transcript with the live page params. It does not
+  // reproduce from curl (Precondition failed without a cookie session); inside
+  // the page a same-origin fetch carries cookies and visitorData, like the transcript button.
   try {
     let gteParams = null;
     const md = html.match(/ytInitialData\s*=\s*/);
@@ -1205,8 +1208,8 @@ async function fetchTranscriptEndpoint(html, vd, vid, dbg) {
       }
     }
     let key = null, context = null;
-    // ytcfg.set( appears several times in the page: iterate all of them; the key and context
-    // sit in one of them (the first block may not have them)
+    // ytcfg.set( appears in the page several times: iterate all of them, the key
+    // and context live in one of them (the first block may lack them)
     let cfgAnchor = html.indexOf("ytcfg.set(");
     while (cfgAnchor >= 0 && (!key || !context)) {
       const brace = html.indexOf("{", cfgAnchor);
@@ -1256,7 +1259,7 @@ async function fetchTranscriptEndpoint(html, vd, vid, dbg) {
 
 let installIdPromise = null;  // two parallel calls must not spawn two UUIDs (review P2)
 async function installId() {
-  // install ID: a UUID per installation; the server account is created by itself
+  // install ID: a UUID per install, the server account is created automatically (docs/billing-auth.md)
   if (installIdPromise) return installIdPromise;
   installIdPromise = (async () => {
     try {
@@ -1270,10 +1273,10 @@ async function installId() {
   return installIdPromise;
 }
 
-let lastBalance = null;  // last /api/account response: {free_left_today, free_daily, credits}
+let lastBalance = null;  // the latest /api/account response: {free_left_today, free_daily, credits}
 
 function setServerStatus(ok) {
-  // server status micro-label under the header title (design/tokens.json → header_status)
+  // tiny server status caption under the header title (design/tokens.json, header_status)
   if (!panel || !panel.srv) return;
   panel.srv.classList.toggle("down", !ok);
   panel.srv.classList.toggle("up", ok);
@@ -1292,8 +1295,8 @@ async function showBalance() {
     setServerStatus(false);
     return;
   }
-  // the server responded but refused: a build without a token / with an outdated key;
-  // this is not "server not responding"; the fix is updating the extension
+  // the server answered but refused: a build without a token or with a stale key
+  // is not "server not responding", the fix is updating the extension
   if (r.status === 401 || String((lastBalance && lastBalance.error) || "").includes("unauthorized")) {
     lastBalance = null;
     panel.status.classList.add("err");
@@ -1304,7 +1307,7 @@ async function showBalance() {
 }
 
 function renderBalance() {
-  // the balance is shown in three places: the feed idle line and the account popover fields
+  // the balance is shown in three places: the idle feed line and the account popover fields
   if (!lastBalance || !panel) return;
   const free = lastBalance.free_left_today + " / " + lastBalance.free_daily;
   const idleBal = panel.root.querySelector("#vfc-idlebal");
@@ -1313,8 +1316,8 @@ function renderBalance() {
   if (f) f.textContent = free;
   const cr = panel.root.querySelector("#vfc-credits");
   if (cr) cr.textContent = String(lastBalance.credits);
-  // 0/0 in the popover; the same hint as on the "nothing to check with" screen (decision #2):
-  // no selling, only an explanation and a link to "how it works" nearby
+  // 0/0 in the popover shows the same hint as the "nothing to check with" screen (decision 2):
+  // no selling, only an explanation and the nearby "how it works" link
   const zero = !Number(lastBalance.free_left_today) && !Number(lastBalance.credits);
   if (panel.balEmpty) {
     panel.balEmpty.classList.toggle("hidden", !zero);
@@ -1331,7 +1334,7 @@ function storedEmail() {
 
 async function renderAuth() {
   if (!panel) return;
-  if (isPublicBuild()) { panel.auth.innerHTML = ""; return; }  // email mock hidden (decision #6)
+  if (isPublicBuild()) { panel.auth.innerHTML = ""; return; }  // the email mock is hidden (decision 6)
   const email = await storedEmail();
   if (email) {
     panel.auth.innerHTML =
@@ -1389,7 +1392,7 @@ function togglePop(force) {
 }
 
 async function verdictLangPref() {
-  // "check language" preference: "auto" (default: browser locale) | "ru" | "en"
+  // the "check language" setting: "auto" (default, browser locale) | "ru" | "en"
   try {
     const st = await chrome.storage.local.get("vfc_verdict_lang");
     return st.vfc_verdict_lang || "auto";
@@ -1401,7 +1404,7 @@ function effectiveVerdictLang(pref) {
 
 let popDismissBound = false;
 function bindPopDismissals() {
-  // close on outside click and Esc; document listeners are registered once per tab
+  // close on outside click and Esc; document listeners are created once per tab
   if (popDismissBound) return;
   popDismissBound = true;
   document.addEventListener("pointerdown", (e) => {
@@ -1429,11 +1432,11 @@ async function doTopup(n) {
     });
     const data = await r.json();
     if (data && data.error) {
-      // a server error is shown with its own text (mockup disabled, limit, etc.)
+      // a server error is shown with its own text (mock disabled, limit and the like)
       panel.topupErr.textContent = String(data.error);
       panel.topupErr.classList.remove("hidden");
     } else {
-      await showBalance();  // the topup response is already the account, but refresh via the common path
+      await showBalance();  // the topup response is already an account, but refresh through the common path
       showToast(tr("toastTopup", { n }));
     }
   } catch {
@@ -1454,15 +1457,15 @@ function showToast(text) {
   toastTimer = setTimeout(() => { if (panel) panel.toast.classList.remove("show"); }, 2600);
 }
 
-// --- "Nothing to check with" screens, quota banner, parallel runs (decisions #2, #3, #9) ---
+// --- "Nothing to check with" screens, quota banner, parallel runs (decisions 2, 3, 9) ---
 
 function isEmptyBalance() {
-  // last known balance: no free checks, no credits
+  // the last known balance: no free checks and no credits
   return !!(lastBalance && !Number(lastBalance.free_left_today) && !Number(lastBalance.credits));
 }
 
 function untilUtcMidnight() {
-  // the daily quota resets at UTC midnight (store._account_view); compute the time until the reset
+  // the daily quota resets at UTC midnight (store._account_view), count down to the reset
   const now = new Date();
   let ms = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1) - now.getTime();
   if (ms < 0) ms = 0;
@@ -1472,8 +1475,8 @@ function untilUtcMidnight() {
 }
 
 function renderBalanceEmpty() {
-  // the "daily limit exhausted" screen before a start (decision #2): no purchase buttons,
-  // only an explanation, the time until the reset and "how it works"; no run is started
+  // the "daily limit used up" screen before a start (decision 2): no buy buttons,
+  // only an explanation, the time until the reset and "how it works"; no run starts
   panel.status.classList.remove("err");
   panel.status.innerHTML = "<span></span>";
   panel.feed.innerHTML =
@@ -1494,7 +1497,7 @@ function renderBalanceEmpty() {
 }
 
 async function hasLiveRunElsewhere(videoId) {
-  // client-side heuristic for parallel runs (decision #3): vfc_runs holds an
+  // client-side heuristic for parallel runs (decision 3): vfc_runs holds an
   // unfinished (not stale, 6h TTL as in resume) run of ANOTHER video
   try {
     const all = (await chrome.storage.local.get("vfc_runs")).vfc_runs || {};
@@ -1504,7 +1507,7 @@ async function hasLiveRunElsewhere(videoId) {
 }
 
 function renderParallelWarning() {
-  // non-blocking warning (decision #3): "Check anyway" / "Cancel"
+  // non-blocking warning (decision 3): "Check anyway" / "Cancel"
   setStatus(`<span>${tr("warnParallel")}</span>`);
   panel.feed.innerHTML =
     `<div class="warnbox"><div class="warntext">${tr("warnParallelText")}</div>` +
@@ -1527,9 +1530,9 @@ function renderParallelWarning() {
 }
 
 async function maybeQuotaBanner(st, videoId) {
-  // an unchecked tail + a fresh 0/0 balance → the "free checks exhausted"
-  // banner without "Continue with credits" (decision #9). A tail left by the run limit
-  // (15 claims) is not marked with the banner: those cards have their own hint
+  // an "unchecked" tail plus a fresh 0/0 balance shows the "free checks are
+  // over" banner without "Continue with credits" (decision 9). A tail left by
+  // the run limit (15 claims) gets no banner, the cards have their own hint
   const c = (st.summary && st.summary.counts) || {};
   if (!((c["не проверено"] || 0) > 0)) return;
   await showBalance();
@@ -1541,8 +1544,8 @@ async function maybeQuotaBanner(st, videoId) {
 }
 
 async function startCheck(force) {
-  // an honest refusal before heavy work: the shorts layout and non-video pages (case 9);
-  // the panel can be opened by the toolbar icon (ensurePanel(true))
+  // an honest refusal before heavy work: the shorts layout and non-video pages (ux risk 9),
+  // the panel may be opened by the toolbar icon (ensurePanel(true))
   const refuse = (msg) => {
     if (!panel) return;
     setStatus(`<span>${msg}</span>`);
@@ -1554,22 +1557,22 @@ async function startCheck(force) {
   if (location.pathname.startsWith("/shorts/")) { refuse(tr("errShorts")); return; }
   const videoId = getVideoId();
   if (!videoId) { refuse(tr("errNoVideo")); return; }
-  // 0/0: the "limit exhausted" screen instead of a run (decision #2); re-read the balance:
-  // the local copy may be stale since the last UTC midnight
+  // 0/0: the "limit used up" screen instead of a run (decision 2); re-read the
+  // balance, the local copy may be stale since the last UTC midnight
   if (isEmptyBalance()) {
     await showBalance();
     if (!panel || getVideoId() !== videoId) return;  // left the video between awaits (P1-1)
     if (isEmptyBalance()) { renderBalanceEmpty(); return; }
   }
-  // a live run of another video: a non-blocking warning (decision #3);
-  // force = "Check anyway" from the warning
+  // a live run of another video: a non-blocking warning (decision 3);
+  // force means "Check anyway" from the warning
   if (!force && await hasLiveRunElsewhere(videoId)) {
     if (!panel || getVideoId() !== videoId) return;
     renderParallelWarning();
     return;
   }
-  const epoch = navEpoch;  // leaving the video mid-await: stay silent, do not corrupt the new state (P1-1)
-  // live detection (case 8): strictly isLive===true; a finished stream can be checked
+  const epoch = navEpoch;  // leaving the video mid-await means silence, do not corrupt the new state (P1-1)
+  // live detection (ux risk 8): strictly isLive===true, a finished stream can still be checked
   const vdLive = await requestPlayerData().catch(() => null);
   if (epoch !== navEpoch) return;
   if (vdLive && vdLive.videoDetails && vdLive.videoDetails.isLive === true) {
@@ -1591,7 +1594,7 @@ async function startCheck(force) {
   try {
     const transcript = await grabTranscript();
     if (epoch !== navEpoch) return;
-    state.transcript = transcript;  // null → the server will fetch it via yt-dlp (fallback)
+    state.transcript = transcript;  // null means the server pulls via yt-dlp itself (fallback)
     if (!transcript) {
       setStatus(tr("errSubsNotRead"), false);
       panel.status.classList.add("err");
@@ -1600,7 +1603,7 @@ async function startCheck(force) {
       method: "POST", headers: { "Content-Type": "application/json", "X-API-Key": API_KEY },
       body: JSON.stringify({
         url: `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`,
-        transcript,  // null → the server will fetch it via yt-dlp (fallback)
+        transcript,  // null means the server pulls via yt-dlp itself (fallback)
         install_id: await installId(),
         verdict_lang: effectiveVerdictLang(await verdictLangPref()),
       }),
@@ -1608,14 +1611,14 @@ async function startCheck(force) {
     const data = await r.json();
     if (epoch !== navEpoch) return;
     setServerStatus(true);
-    // the server responded with an error code: route it through finishWithError,
-    // do not mask it as "server not responding" in the catch below
+    // the server answered with an error code: route it through finishWithError
+    // instead of masking it as "server not responding" in the catch below
     if (data.error) { finishWithError(data.error); return; }
     state.runId = data.run_id;
     await storeRun(videoId, data.run_id);
-    if (epoch !== navEpoch) return;  // storeRun is also an await: the video may have changed
-    // feature A: the transcript is already in hand: the video text is in the feed at once,
-    // facts are inserted by timecode; without a transcript, skeletons as before
+    if (epoch !== navEpoch) return;  // storeRun also awaits, the video may have changed
+    // feature A: the transcript is already at hand, so the video text is in the
+    // feed at once and facts slot in by timecode; without a transcript, skeletons as before
     if (state.transcript && state.transcript.cues && state.transcript.cues.length) {
       renderTranscriptFeed(state.transcript.cues);
     } else {
@@ -1624,7 +1627,7 @@ async function startCheck(force) {
     syncFeedTabs();
     startPolling();
   } catch (e) {
-    if (epoch !== navEpoch || !panel) return;  // the panel may have disappeared off-watch (P1-1)
+    if (epoch !== navEpoch || !panel) return;  // panel may be gone on a non-watch page (P1-1)
     setServerStatus(false);
     setStatus(tr("errServer"));
     panel.run.disabled = false;
@@ -1645,7 +1648,7 @@ function stopPolling() {
 
 async function pollStatus() {
   if (!state.runId) return;
-  const runId = state.runId, videoId = state.videoId;  // compare after await: if the user left the video, do not write (P1-1)
+  const runId = state.runId, videoId = state.videoId;  // compare after await: if we left the video, write nothing (P1-1)
   let st;
   try {
     const r = await fetch(`${API}/api/run/${runId}`, { headers: { "X-API-Key": API_KEY } });
@@ -1662,16 +1665,16 @@ async function pollStatus() {
     state.done = true;
     const c = st.summary && st.summary.counts || {};
     setStatus(tr("done", { t: c["правда"] || 0, f: c["ложно"] || 0, s: c["странно"] || 0 }));
-    // the background run finished while the panel is collapsed: the quiet "result ready" badge
+    // a background run finished while the panel was collapsed: the quiet "result ready" badge
     if (panelMode === "mini") setMiniDone(true);
-    maybeQuotaBanner(st, videoId);  // the unchecked tail with an exhausted quota (decision #9)
+    maybeQuotaBanner(st, videoId);  // an "unchecked" tail with an exhausted quota (decision 9)
   } else if (st.status === "error") {
     finishWithError(st.error || "");
   } else if (st.status !== "running") {
     // a status outside done/error/running: the run hung or was cancelled, an error instead of an endless spinner
     finishWithError(st.error || tr("errOtherEmpty"));
   } else {
-    // staged progress: transcript 0-8% → claims 8-55% → verdicts 55-97%
+    // staged progress: transcript 0-8%, claims 8-55%, verdicts 55-97%
     const frac = (ph) => {
       const m = (ph || "").match(/(\d+)\/(\d+)/);
       return m ? parseInt(m[1], 10) / Math.max(1, parseInt(m[2], 10)) : 0;
@@ -1694,7 +1697,7 @@ async function pollStatus() {
   }
 
   if (st.claims) {
-    // skeletons/transcript live until the first verdict; a finish without verdicts → "unchecked" cards
+    // skeletons and the transcript live until the first verdict; a finish without verdicts gives "unchecked" cards
     if (st.claims.some((c) => c.verdict) || st.status === "done") {
       state.claims = st.claims;
       renderCurrent(st);
@@ -1705,7 +1708,7 @@ async function pollStatus() {
   if (st.summary) renderCounts(st.summary);
   if (st.status === "done" && st.summary && st.summary.no_claims) {
     const msg = `<div class="empty"><b>${tr("noClaims")}</b><br>${tr("noClaimsHint")}</div>`;
-    // in "Text" mode the transcript stays readable: the message is added on top of it
+    // in "Text" mode the transcript stays readable, the message is added on top of it
     if (state.feedMode === "text" && state.transcript && state.transcript.cues && state.transcript.cues.length) {
       panel.feed.insertAdjacentHTML("afterbegin", msg);
     } else {
@@ -1713,16 +1716,16 @@ async function pollStatus() {
     }
   }
   if (st.status === "done" || st.status === "error") {
-    saveHistory(videoId, st);  // the result survives F5 and navigation (restoreHistory); the id was captured before the await
+    saveHistory(videoId, st);  // the result survives F5 and navigation (restoreHistory); the id is captured before the await
     stopPolling();
     panel.run.disabled = false;
-    // a repeat run is forbidden: on a checked video
-    // there is no launch button: only the result; after an error a retry is allowed
+    // a repeat run is not allowed: on a checked video there is no start
+    // button, only the result; after an error a retry is allowed
     if (st.status === "done") panel.run.classList.add("hidden");
     else panel.run.textContent = tr("btnRun");
     syncActionButton();
-    // both on done and on error: a dead run must not auto-open the panel for 6 hours
-    // with an error on every visit to the video (scenario card acceptance, case 10)
+    // both done and error: a dead run must not auto-open the panel with an
+    // error on every visit to the video for 6 hours (scenario map acceptance, ux risk 10)
     clearStoredRun(videoId);
   }
 }
@@ -1747,8 +1750,8 @@ function finishWithError(raw) {
 }
 
 function onSkipWait() {
-  // "skip waiting": the run lives on the server, polling continues; the result will
-  // arrive by itself; the panel collapses into a circle to keep the screen free (scenario C2)
+  // "skip waiting": the run lives on the server, polling continues and the result
+  // arrives on its own; the panel folds into the dot to free the screen (skip-wait scenario)
   setStatus(tr("skipped"));
   setPanelMode("mini");
 }
@@ -1757,7 +1760,7 @@ function setStatus(html, spinner = false, pct = null) {
   panel.status.classList.remove("err");
   let bar = "";
   if (pct !== null && pct !== undefined) {
-    // a thin staged-progress bar: entities arrive, the user sees how much is left
+    // a thin staged progress bar: entries arrive, the user sees how much is left
     bar = `<span class="phasebar" aria-hidden="true"><i style="width:${Math.min(100, Math.max(0, pct))}%"></i></span>`;
   }
   panel.status.innerHTML = (spinner ? '<div class="spin"></div>' : "") + `<span>${html}</span>` + bar;
@@ -1778,19 +1781,19 @@ async function clearStoredRun(videoId) {
   } catch {}
 }
 async function saveHistory(videoId, st) {
-  // save the run result: the verdicts survive F5 and navigation
+  // save the run result: verdicts survive F5 and navigation
   try {
     const all = (await chrome.storage.local.get("vfc_history")).vfc_history || {};
     all[videoId] = {
       runId: state.runId,
       claims: st.claims || [],
       summary: st.summary || {},
-      status: st.status || "",  // done/error/running: restoreHistory decides between "Done" and an error
+      status: st.status || "",  // done/error/running: restoreHistory decides between done and error
       error: st.error || "",
       at: Date.now(),
     };
-    // keep at most the last 50 videos (v0.9.0: a count limit instead of a 24-hour
-    // TTL: account.html reads the whole history, the record format is unchanged)
+    // keep at most 50 recent videos (v0.9.0: a count limit instead of a 24h
+    // TTL; account.html reads the whole history, the record format is unchanged)
     const keys = Object.keys(all);
     if (keys.length > 50) {
       keys.sort((a, b) => (all[a].at || 0) - (all[b].at || 0));
@@ -1802,21 +1805,21 @@ async function saveHistory(videoId, st) {
 
 async function restoreHistory(videoId) {
   // restore verdicts when returning to a video (F5, SPA navigation);
-  // v0.9.0: everything stored survives (the last 50), the 24-hour TTL was dropped (decision #7)
+  // v0.9.0: everything stored survives (the 50 latest), the 24h TTL is gone (decision 7)
   try {
     const all = (await chrome.storage.local.get("vfc_history")).vfc_history || {};
     const h = all[videoId];
     if (!h) return false;
     state.claims = h.claims || [];
-    state.transcript = null;   // the transcript is not stored in history;
-    state.feedMode = "facts"; // the feed after returning has cards only (feature A)
+    state.transcript = null;   // the transcript is not stored in history,
+    state.feedMode = "facts"; // after returning the feed is cards only (feature A)
     if (h.summary) renderCounts(h.summary);
     renderCurrent({ claims: state.claims });
     syncFeedTabs();
     syncDlButton();
     const dur = (h.summary && h.summary.duration) || (getVideoEl() && getVideoEl().duration) || 0;
     renderTimeline(state.claims, dur);
-    // the run is neither done nor running (error or hung): an error status, not an endless loader
+    // the run is neither done nor running (error or hang): an error status, not an endless loader
     if (h.status && h.status !== "done" && h.status !== "running") {
       const msg = h.error
         ? tr("errOther", { text: escapeHtml(String(h.error).slice(0, 90)) })
@@ -1829,8 +1832,8 @@ async function restoreHistory(videoId) {
     setStatus(tr("done", { t: c["правда"] || 0,
                            f: c["ложно"] || 0,
                            s: c["странно"] || 0 }));
-    state.done = true;  // a finished result: the button under the video opens it, does not restart
-    // a repeat run is forbidden: there is no launch button on a checked video
+    state.done = true;  // a ready result: the button under the video opens it, no restart
+    // a repeat run is not allowed: there is no start button on a checked video
     panel.run.disabled = false;
     panel.run.classList.add("hidden");
     syncActionButton();
@@ -1839,11 +1842,11 @@ async function restoreHistory(videoId) {
 }
 
 async function resumeStoredRun() {
-  // returned to a video with a live/finished run: keep showing it
+  // returned to a video with a live or finished run: keep showing it
   try {
     const videoId = getVideoId();
     const all = (await chrome.storage.local.get("vfc_runs")).vfc_runs || {};
-    // between the await and the storage read the user may have left for another video (P1-1)
+    // between the await and the storage read the user may have switched videos (P1-1)
     if (!panel || getVideoId() !== videoId) return false;
     const rec = all[videoId];
     if (!rec || Date.now() - rec.at > 6 * 3600e3) return false;
@@ -1854,7 +1857,7 @@ async function resumeStoredRun() {
     runProgress = null;
     syncActionButton();
     setStatus(tr("resume"), true);
-    // the transcript may remain in state (the panel was wiped mid-video); text is worth more than skeletons
+    // a transcript may remain in state (the panel was wiped mid-video): text beats skeletons
     if (state.transcript && state.transcript.cues && state.transcript.cues.length) {
       renderTranscriptFeed(state.transcript.cues);
     } else {
@@ -1866,7 +1869,7 @@ async function resumeStoredRun() {
 }
 
 function renderSkeletons() {
-  // running-phase placeholders (verdict-stream §3): until the first verdict the feed is occupied
+  // placeholders for the running phase (verdict-stream §3): the feed stays occupied until the first verdict
   const one = `<div class="card skel"><div class="statebg">
     <div class="row1"><span class="sk sk-badge"></span></div>
     <span class="sk sk-line"></span><span class="sk sk-line short"></span>
@@ -1874,12 +1877,12 @@ function renderSkeletons() {
   panel.feed.innerHTML = one.repeat(4);
 }
 
-let lastSummary = null;  // last summary: a filter click re-renders the counters without a new poll
+let lastSummary = null;  // the latest summary: a filter click re-renders the counters without a new poll
 
 function renderCounts(s) {
-  // the stack bar, the "video truth bar": verdict shares + four number labels under it;
-  // an empty run: the bar is entirely the unchecked color. Segments and labels are
-  // feed filters (fix 9): a click leaves cards of one verdict in the feed, a repeat click restores all
+  // the "video truth bar" stack bar: verdict shares plus four number labels under it;
+  // an empty run paints the whole bar in the unchecked color. Segments and labels
+  // are feed filters (fix 9): a click keeps one verdict's cards in the feed, a second click restores all
   lastSummary = s;
   const c = s.counts || {};
   const total = s.claims_total || 0, checked = s.checked || 0;
@@ -1915,12 +1918,12 @@ function renderCounts(s) {
     if (el.tagName === "BUTTON" && el.disabled) return;  // a zero counter does not filter
     el.addEventListener("click", () => {
       const v = el.dataset.v;
-      state.filter = state.filter === v ? null : v;  // a repeat click clears the filter
+      state.filter = state.filter === v ? null : v;  // a second click clears the filter
       renderCounts(lastSummary);
       renderCurrent({ claims: state.claims });
     });
   });
-  runProgress = { checked, total };  // counter for the action-row button
+  runProgress = { checked, total };  // the counter for the button in the action row
   syncActionButton();
 }
 
@@ -1929,7 +1932,7 @@ function renderClaims(st) {
   const L = I18N[uiLang()];
   const scroll = panel.feed.scrollTop;
   // feed filter (fix 9): keep only the cards of the selected verdict;
-  // data-i holds the original index: onTimeUpdate finds the "current" card by it
+  // data-i holds the original index, onTimeUpdate finds the "current" card by it
   const f = state.filter;
   const items = st.claims.map((c, i) => ({ c, i }))
     .filter(({ c }) => !f || (f === "не проверено" ? !c.verdict : c.verdict === f));
@@ -1945,8 +1948,8 @@ function renderClaims(st) {
 }
 
 function renderCurrent(st) {
-  // feed dispatcher (feature A): "Text" = the transcript with cards by timecode,
-  // "Facts" = cards only; without a transcript always "Facts"
+  // feed dispatcher (feature A): "Text" is the transcript with cards by timecode,
+  // "Facts" is cards only; without a transcript always "Facts"
   syncDlButton();
   if (state.feedMode === "text" && state.transcript && state.transcript.cues && state.transcript.cues.length) {
     renderFeed(state.transcript.cues, st.claims || state.claims);
@@ -1956,8 +1959,8 @@ function renderCurrent(st) {
 }
 
 function renderTranscriptFeed(cues) {
-  // feature A: the video text is in the feed right after grabTranscript, no skeletons needed;
-  // facts are inserted by timecode in renderFeed when pollStatus delivers them
+  // feature A: the video text is in the feed right after grabTranscript, no skeletons;
+  // facts slot in by timecode in renderFeed once pollStatus delivers them
   const L = I18N[uiLang()];
   const dc = dedupCues(cues);
   if (!dc.length) { renderSkeletons(); return; }
@@ -1966,9 +1969,9 @@ function renderTranscriptFeed(cues) {
 }
 
 function renderFeed(cues, claims) {
-  // feature A, variant B: transcript + cards by timecode. For each claim
-  // we find the nearest cue (binary search) and insert the card before it;
-  // transcript groups without cards are collapsed into "··· N more fragments"
+  // feature A, variant B: transcript plus cards by timecode. For every claim we
+  // find the nearest cue (binary search) and insert the card before it;
+  // transcript groups without cards fold into "... N more fragments"
   const L = I18N[uiLang()];
   const scroll = panel.feed.scrollTop;
   const f = state.filter;
@@ -1976,14 +1979,14 @@ function renderFeed(cues, claims) {
     .filter(({ c }) => !f || (f === "не проверено" ? !c.verdict : c.verdict === f))
     .sort((a, b) => (a.c.t_start || 0) - (b.c.t_start || 0));
   const dc = dedupCues(cues);
-  const before = new Map();  // cue index → cards before its line
+  const before = new Map();  // cue index to the cards in front of its line
   for (const it of items) {
     const k = nearestCueIndex(dc, it.c.t_start || 0);
     if (!before.has(k)) before.set(k, []);
     before.get(k).push(it);
   }
   const parts = [];
-  let run = [];  // consecutive groups without cards: one collapsed block
+  let run = [];  // consecutive groups without cards form one collapsed block
   const flush = () => {
     if (!run.length) return;
     if (run.some((g) => state.unfolded.has(g.bucket))) {
@@ -2008,9 +2011,9 @@ function renderFeed(cues, claims) {
 }
 
 function transcriptGroupHTML(dc, g, before, L) {
-  // one ~30-second transcript group; before is a Map (cue index → cards) or null.
-  // A timecode on every line: one shared column with the cards; a click seeks
-  // (as in YouTube's own transcript); cards stand before their cue's line
+  // one transcript group of about 30 seconds; before is a Map (cue index to cards) or null.
+  // Every line has a timecode: one shared column with the cards, a click seeks
+  // (as in the native YouTube transcript); cards land in front of their cue's line
   const lines = g.cues.map((k) => {
     const cue = dc[k];
     const cards = before && before.has(k)
@@ -2022,8 +2025,8 @@ function transcriptGroupHTML(dc, g, before, L) {
   return `<div class="tgroup" data-b="${g.bucket}">${lines}</div>`;
 }
 
-// source weight (the science-vs-sonar dilemma, step 1): sonar also finds scientific
-// papers: they get a pill highlight and go first in the source list.
+// source weight (the science-vs-sonar dilemma, step 1): sonar also finds science
+// papers, they get the pill highlight and go first in the source list.
 // The domain list is suffix-based: nature.com covers subdomains too
 const SCI_DOMAINS = new Set([
   "pubmed.ncbi.nlm.nih.gov", "ncbi.nlm.nih.gov", "europepmc.org", "nature.com",
@@ -2054,18 +2057,18 @@ function kindPill(kind, full) {
 }
 
 function claimCardHTML(c, i, L) {
-  // claim card markup, shared by the "Text" and "Facts" modes;
-  // fixes 3/6/7/8 (seekTo, the confidence scale, pass divergence, source
+  // claim card markup shared by the "Text" and "Facts" modes;
+  // fixes 3/6/7/8 (seekTo, the confidence scale, split passes, source
   // blocks) live here
   const v = c.verdict || null;
   const cls = v ? VERDICT_CLASS[v] : "v-none";
   const label = verdictLabel(v);
   const safeUrl = (u) => /^https?:\/\//.test(u) ? escapeHtml(u) : "#";
-  // feature C: no verdict and a verbatim quote: a conspect card instead of a stub
+  // feature C: no verdict plus a verbatim quote gives a note card instead of a stub
   const note = !v && (c.quote || "").trim();
   const long = !note && (c.claim || "").length > 90;
   const expanded = !note && state.expanded.has(c.hash);
-  // confidence scale (fix 6): three 18×4 segments + a level label in color
+  // confidence scale (fix 6): three 18x4 segments plus a level label in color
   let conf = "";
   if (c.result && c.result.confidence && v) {
     const dots = CONF_DOTS[c.result.confidence] || 0;
@@ -2074,8 +2077,8 @@ function claimCardHTML(c, i, L) {
       `<span class="segs">` + [1, 2, 3].map((k) => `<i class="${k <= dots ? "on" : ""}"></i>`).join("") + `</span>` +
       `<span class="lvl">${confLabel(c.result.confidence)}</span></span>`;
   }
-  // pass divergence (fix 7): instead of a technical phrase, each pass's
-  // conclusion on its own line; passes is an array of verdicts from the backend
+  // split passes (fix 7): instead of a technical phrase, the output of each
+  // pass on its own line; passes is the verdict array from the backend
   let why = "";
   if (c.why) {
     const passes = (c.result && Array.isArray(c.result.passes)) ? c.result.passes : null;
@@ -2089,12 +2092,12 @@ function claimCardHTML(c, i, L) {
       why = `<div class="why">${escapeHtml(c.why)}</div>`;
     }
   }
-  // stage 2.5: indirect scientific evidence;
-  // step 2 (v0.7.0): adjacent/irrelevant papers (relevance adjacent/off)
-  // do not show the block: retrieval noise is filtered out; older runs lack the field,
-  // treat them as direct. Conflict = the "true" verdict vs refutes, the "false" verdict vs supports OR
-  // the verdict already downgraded by science on the server (science_flip: the "strange" verdict + a merged
-  // why), then science also goes first, sonar with a prefix
+  // stage 2.5, indirect science evidence (docs/verdict-math.md);
+  // step 2 (v0.7.0): adjacent or irrelevant papers (relevance adjacent/off)
+  // show no block, retrieval noise is filtered; old runs lack the field,
+  // treat them as direct. Conflict = true vs refutes, false vs supports OR
+  // the verdict already downgraded by science on the server (science_flip: unclear
+  // plus a glued why), then science also goes first, sonar with the prefix
   let plaus = "";
   const pl = c.result && c.result.plausibility;
   const flip = (c.result && c.result.science_flip) || "";
@@ -2113,9 +2116,9 @@ function claimCardHTML(c, i, L) {
         `title="${escapeHtml(pl.quote || "")}">${kindPill("sci", true)}${escapeHtml(src.title)}${src.year ? " · " + escapeHtml(String(src.year)) : ""}</a>` : "") +
       `</div>`;
   }
-  // sources (fix 8): collapsed: domains in a row with the quote in a tooltip;
-  // expanded: each source as a block with the full quote and a link.
-  // Sorted by weight: scientific and official first (V8 sort is stable)
+  // sources (fix 8): collapsed, domains in a line with the quote in a tooltip;
+  // expanded, each source as a block with the full quote and link.
+  // Sorted by weight: science and official first (the V8 sort is stable)
   const RANK = { sci: 0, org: 1, null: 2 };
   const votes = (((c.result && c.result.votes) || [])).slice()
     .sort((a, b) => RANK[domainKind(a.domain)] - RANK[domainKind(b.domain)]);
@@ -2159,7 +2162,7 @@ function claimCardHTML(c, i, L) {
 
 function markNewCards() {
   // the arrive animation only for cards not seen yet (by hash);
-  // data-i points to the claim regardless of DOM order ("Text" mode)
+  // data-i points at the claim regardless of DOM order ("Text" mode)
   panel.feed.querySelectorAll(".card").forEach((el) => {
     const c = state.claims[parseInt(el.dataset.i, 10)];
     if (c && !state.seen.has(c.hash)) { state.seen.add(c.hash); el.classList.add("new"); }
@@ -2167,10 +2170,10 @@ function markNewCards() {
 }
 
 function bindFeedHandlers() {
-  // shared handlers after any feed re-render: cards, timecodes, "··· N more"
+  // shared handlers after any feed re-render: cards, timecodes, "... N more"
   panel.feed.querySelectorAll(".card").forEach((el) => {
     el.addEventListener("click", (e) => {
-      if (e.target.closest("a, .ts")) return;  // links and the timecode do not toggle expansion on click
+      if (e.target.closest("a, .ts")) return;  // links and timecodes do not expand on click
       const h = el.dataset.h;
       if (state.expanded.has(h)) state.expanded.delete(h); else state.expanded.add(h);
       renderCurrent({ claims: state.claims });
@@ -2184,7 +2187,7 @@ function bindFeedHandlers() {
       if (e.key === "Enter" || e.key === " ") { e.preventDefault(); seekTo(t); }
     });
   });
-  // "··· N more fragments" (feature A): unfold the collapsed groups, never fold back
+  // "... N more fragments" (feature A): expand the collapsed groups, no re-collapse afterwards
   panel.feed.querySelectorAll(".tmore").forEach((el) => {
     const open = () => {
       el.dataset.b.split(",").forEach((b) => state.unfolded.add(parseInt(b, 10)));
@@ -2261,8 +2264,8 @@ function buildMarkdown() {
   ];
   for (const c of state.claims.slice().sort((a, b) => (a.t_start || 0) - (b.t_start || 0))) {
     out.push("", `### [${fmtTS(c.t_start)}] ${icon(c.verdict)} ${cap(verdictLabel(c.verdict || null))}: ${one(c.claim)}`);
-    // checked claims get the explanation, unchecked ones the verbatim quote (feature C);
-    // on a conflict with science (including the server-side science_flip): a prefix, as in the card
+    // checked claims get the explanation, unchecked get the verbatim quote (feature C);
+    // on a conflict with science (including the server-side science_flip) the prefix matches the card
     const plMD = c.result && c.result.plausibility;
     const flipMD = (c.result && c.result.science_flip) || "";
     const directMD = !plMD || plMD.relevance === undefined || plMD.relevance === "directly_on_topic";
@@ -2295,8 +2298,8 @@ function buildMarkdown() {
 }
 
 function renderTimeline(claims, duration) {
-  // verdict map over the YouTube progress bar: % of position = % of duration;
-  // overlaps: the "worst" verdict is drawn last (on top). Drawing order: true → strange → false.
+  // verdict map over the YouTube progress bar: position percent = duration percent;
+  // overlaps: the "worst" verdict is drawn last (on top). Draw order: true, then unclear, then false.
   const bar = document.querySelector(".ytp-progress-bar");
   if (!bar || !duration) return;
   let host = bar.querySelector(".vfc-segments");
@@ -2322,14 +2325,15 @@ function escapeHtml(s) {
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
 }
 
-// --- Launch button in the action row under the video (conspect pattern) ---
-// Lives in the page DOM, not in the shadow panel: styles are a separate <style> in head,
-// classes isolated with the vfc-action- prefix. Anchor as in conspect: a sibling
-// #subscribe-button inside the stable #owner: the same row where "Subscribe"
-// and like/share sit; YouTube re-renders #top-level-buttons-computed itself and
-// replaces it with a skeleton, #owner is stable. Appearance: a pill like the neighboring
-// action buttons (like "Download" in other extensions): a neutral background at the
-// "Subscribe" level (dark theme #272727 + border #3d3d3d, hover #3f3f3f), radius 18, a shield icon with a checkmark.
+// --- Start button in the action row under the video ---
+// It lives in the page DOM, not in the shadow panel: styles are a separate <style> in head,
+// classes are isolated with the vfc-action- prefix. Anchor: a sibling of
+// #subscribe-button inside the stable #owner, the same row as "Subscribe"
+// and like/share; YouTube redraws #top-level-buttons-computed itself and
+// swaps in a skeleton, while #owner is stable. Look: a pill like the neighboring
+// action buttons (like the "Download" button of other extensions): a neutral background
+// at the "Subscribe" level (dark theme #272727 + border #3d3d3d, hover #3f3f3f),
+// radius 18, a shield icon with a check mark.
 const ACTION_HOST_ID = "vfc-action-host";
 const ACTION_BTN_ID = "vfc-action-btn";
 const ACTION_ICON =
@@ -2337,7 +2341,7 @@ const ACTION_ICON =
   ' stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
   '<rect x="4" y="6.4" width="15.7" height="11.2" rx="3"/>' +
   '<path d="M8.6 12 L10.9 14.3 L15.7 8.6"/></svg>';
-// checkmark in a circle: the "video checked" state on the button under the video
+// check mark in a circle: the "video checked" state on the button under the video
 const ACTION_DONE_ICON =
   '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor"' +
   ' stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -2366,13 +2370,13 @@ const ACTION_CSS = `
   .vfc-action-btn.vfc-running .vfc-action-icon { display: none; }
   .vfc-action-btn.vfc-running.vfc-has-count .vfc-action-count { display: inline; }
   .vfc-action-btn.vfc-running:not(.vfc-has-count) .vfc-action-spinner { display: inline-block; }
-  /* checked: a checkmark instead of the launch icon; a click opens the result, does not restart */
+  /* checked: a check mark instead of the start icon, a click opens the result, no restart */
   .vfc-action-btn .vfc-action-icon-done { display: none; }
   .vfc-action-btn.vfc-done .vfc-action-icon { display: none; }
   .vfc-action-btn.vfc-done .vfc-action-icon-done { display: inline-flex; }
-  /* dark theme: an opaque background like "Subscribe", with a border; rgba(.1) is
-     almost invisible on dark (fix 1). YouTube sets the dark attribute on both ytd-app
-     and <html>: cover both, otherwise the button stays light and disappears */
+  /* dark theme: an opaque background like "Subscribe" with a border, rgba(.1) is
+     nearly invisible on dark (fix 1). YouTube sets the dark attribute on both ytd-app
+     and <html>, cover both, otherwise the button stays light and disappears */
   ytd-app[dark] .vfc-action-btn, html[dark] .vfc-action-btn {
     background: #272727; color: #f1f1f1; border: 1px solid #3d3d3d;
   }
@@ -2381,7 +2385,7 @@ const ACTION_CSS = `
     border-color: rgba(255, 255, 255, .2); border-top-color: #aaa;
   }
   @keyframes vfc-action-rot { to { transform: rotate(360deg); } }
-  /* first-run hint (decision #5): a one-time pulse of the "Fact-check" button
+  /* first-run hint (decision 5): a one-time pulse of the "Fact-check" button
      on the first /watch after install; the first click dismisses it forever (vfc_hint_seen) */
   .vfc-action-btn.vfc-hint { animation: vfc-hint-pulse 1.6s ease-out infinite; }
   @keyframes vfc-hint-pulse {
@@ -2405,10 +2409,10 @@ function ensureActionStyles() {
   (document.head || document.documentElement).appendChild(st);
 }
 
-// "where is the entry" hint on the first /watch visit after install (decision #5):
+// "where is the entry" hint on the first /watch visit after install (decision 5):
 // the button pulses until the user clicks it; the vfc_hint_seen flag in
 // chrome.storage.local kills the pulse forever, no modals
-let hintDismissed = null;  // null: not yet read from storage; true/false: the outcome
+let hintDismissed = null;  // null means not read from storage yet, true/false is the outcome
 async function syncHintPulse(btn) {
   if (hintDismissed === null) {
     try { const st = await chrome.storage.local.get("vfc_hint_seen"); hintDismissed = !!st.vfc_hint_seen; }
@@ -2424,7 +2428,7 @@ function dismissHint() {
 }
 
 function actionAnchor() {
-  // #owner lives in the ytd-watch-metadata and never appears in the skeleton
+  // #owner lives inside ytd-watch-metadata and never appears in the skeleton
   const owner = document.querySelector("#owner");
   if (!owner) return null;
   return owner.querySelector("#subscribe-button")
@@ -2437,8 +2441,8 @@ function injectActionButton() {
     if (existing) existing.remove();
     return;
   }
-  // In place, inside #owner and visible: ok. offsetParent===null catches both a hidden
-  // ancestor (skeleton) and display:none: rebind in both cases (a conspect technique).
+  // In place, inside #owner and visible, all good. offsetParent===null catches both a hidden
+  // ancestor (skeleton) and display:none: in both cases re-bind the button.
   if (existing && existing.closest("#owner") && existing.offsetParent !== null) {
     syncActionButton();
     syncActionVisibility(existing);
@@ -2446,7 +2450,7 @@ function injectActionButton() {
   }
   if (existing) existing.remove();
   const sub = actionAnchor();
-  if (!sub || !sub.parentNode) return;  // #owner is not ready yet; the interval will retry
+  if (!sub || !sub.parentNode) return;  // #owner is not ready yet, the interval retries
   ensureActionStyles();
   const host = document.createElement("div");
   host.id = ACTION_HOST_ID;
@@ -2461,27 +2465,27 @@ function injectActionButton() {
     `</button>`;
   host.querySelector("button").addEventListener("click", onActionClick);
   sub.parentNode.insertBefore(host, sub.nextSibling);
-  syncHintPulse(host.querySelector("button"));  // first launch: pulse until the first click
+  syncHintPulse(host.querySelector("button"));  // first run: pulse until the first click
   syncActionButton();
 }
 
 async function onActionClick() {
   // the toolbar icon opens the panel on any youtube page: on /shorts and off-video
-  // startCheck will refuse honestly (case 9), on watch it will start a check
-  dismissHint();  // the first button click dismisses the hint forever (decision #5)
+  // startCheck refuses honestly (ux risk 9), on watch it starts the check
+  dismissHint();  // the first button click dismisses the hint forever (decision 5)
   ensurePanel(true);
   if (!panel) return;
-  // the panel is hidden or collapsed into a circle: show it in full first
+  // the panel is hidden or folded into the dot: show it in full first
   if (panelMode !== "full") setPanelMode("full");
-  // history/run may not have finished loading from storage: the guard decides on the facts (case 11)
-  if (bootPromise) { try { await bootPromise; } catch { /* restore failed: a new run starts below */ } }
+  // history or the run may still be loading from storage, the guard decides on facts (ux risk 11)
+  if (bootPromise) { try { await bootPromise; } catch { /* restore failed, a new run starts below */ } }
   if (panel.run.disabled) { syncActionButton(); return; }  // a run is already in progress
-  if (state.done || state.claims.length) return;  // a result exists; just open it
+  if (state.done || state.claims.length) return;  // the result exists, just open it
   startCheck();
 }
 
 function syncRunRing() {
-  // header button ring: cone i/N when a counter exists; pulse otherwise
+  // header button ring: an i/N cone when the counter exists, a pulse otherwise
   if (!panel || !panel.run) return;
   const busy = panel.run.disabled;
   const has = busy && runProgress && runProgress.total > 0 && runProgress.checked > 0;
@@ -2491,15 +2495,15 @@ function syncRunRing() {
 }
 
 function syncActionButton() {
-  syncRunRing();  // the ring in the panel header lives on the same events as the button under the video
-  syncMiniBusy(); // and the collapsed circle pulse too
+  syncRunRing();  // the header ring lives on the same events as the button under the video
+  syncMiniBusy(); // so does the pulse of the collapsed dot
   const btn = document.getElementById(ACTION_BTN_ID);
   if (!btn) return;
   const busy = !!(panel && panel.run && panel.run.disabled);
   const done = !!(panel && state.done && !busy);
   btn.classList.toggle("vfc-running", busy);
   btn.classList.toggle("vfc-done", done);
-  // during a run: the verdict counter if data already exists, otherwise a spinner
+  // during a run: the verdict counter if data exists already, otherwise a spinner
   const hasCount = busy && runProgress && runProgress.checked > 0;
   btn.classList.toggle("vfc-has-count", hasCount);
   if (hasCount) btn.querySelector(".vfc-action-count").textContent =
@@ -2508,8 +2512,8 @@ function syncActionButton() {
   btn.setAttribute("aria-label", btn.title);
 }
 
-// YouTube makes the metadata sticky/fixed in several layouts while scrolling; the sibling
-// "Subscribe" button would float over the content. Hide it while an ancestor is sticky/fixed (from conspect).
+// YouTube makes the metadata sticky/fixed in some scroll modes, so a sibling
+// "Subscribe" button would float over the content. Hide it while an ancestor is sticky/fixed.
 function syncActionVisibility(host) {
   let stuck = false;
   for (let el = host; el && el !== document.documentElement; el = el.parentElement) {
@@ -2529,33 +2533,33 @@ function scheduleActionVisibility() {
 }
 window.addEventListener("scroll", scheduleActionVisibility, { passive: true });
 
-// YouTube is an SPA: re-set up the panel on navigation; no panel on non-video pages
+// YouTube is a SPA: re-set up the panel on navigation; no panel on non-video pages
 let lastUrl = location.href;
 setInterval(() => {
   if (location.href !== lastUrl) {
     lastUrl = location.href;
-    navEpoch++;  // the old video's async chains must fall silent (review P1-1)
+    navEpoch++;  // the async chains of the old video must fall silent (review P1-1)
     stopPolling();
     state = freshState(getVideoId());
     runProgress = null;
     panel = null;
-    panelMode = "hidden";  // no panel on a new video: only the button under the video
-    document.querySelectorAll(".vfc-segments").forEach((e) => e.remove());  // the verdict map lives in the player; wipe it (P1-2)
+    panelMode = "hidden";  // no panel on a new video, only the button under the video
+    document.querySelectorAll(".vfc-segments").forEach((e) => e.remove());  // the verdict map lives in the player, wipe it (P1-2)
     ensurePanel();
   } else if (getVideoId() && !document.getElementById("vfc-host")) {
     panel = null;
-    panelMode = "hidden";  // YouTube wiped the panel: it stays hidden after re-creation (desync fix)
-    stopPolling();         // the old poll interval must not leak; resume will start its own
+    panelMode = "hidden";  // YouTube wiped the panel: after re-creation it stays hidden (desync fix)
+    stopPolling();         // the old poll interval must not leak, resume starts its own
     ensurePanel();
   }
-  injectActionButton();  // YouTube re-renders the action row; bring the button back
+  injectActionButton();  // YouTube redraws the action row, restore the button
 }, 1500);
 
 ensurePanel();
 injectActionButton();
 
-// click on the extension icon in the Chrome toolbar (background.js): the same entry
-// as the button under the video: open/expand the panel, start a check if not checked yet
+// click on the extension icon in the Chrome toolbar (background.js) is the same
+// entry as the button under the video: open or expand the panel, start a check if not checked yet
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg && msg.type === "vfc-open-panel") onActionClick();
 });

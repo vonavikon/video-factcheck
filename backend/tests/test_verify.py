@@ -1,6 +1,7 @@
-"""Evidence Verification (v0.10): SSRF-гвард, извлечение текста, сверка цитат
-с оригиналом страницы и с абстрактом plausibility. Всё офлайн: DNS мокается,
-HTTP — httpx.MockTransport, сокеты заблокированы conftest-ом."""
+"""Evidence Verification (v0.10): SSRF guard, text extraction, quote checks
+against the page original and against the plausibility abstract. Fully
+offline: DNS is mocked, HTTP uses httpx.MockTransport, sockets are blocked
+by conftest."""
 import json
 import socket
 
@@ -10,9 +11,9 @@ import pytest
 from videofactcheck import verdict as ve
 from videofactcheck import verify as vf
 
-# публичный IP-литерал: гвард пропускает без DNS (для офлайн-тестов)
+# public IP literal: the guard passes it without DNS (for offline tests)
 PUB = "https://93.184.216.34/a"
-# цитата достаточной длины, чтобы пройти MIN_QUOTE_CHARS-гейт в verdict
+# a quote long enough to pass the MIN_QUOTE_CHARS gate in verdict
 LONG_QUOTE = "Дословная цитата достаточной длины для сверки с оригиналом страницы"
 
 
@@ -20,11 +21,11 @@ def _transport(handler):
     return httpx.MockTransport(handler)
 
 
-# ── SSRF-гвард ────────────────────────────────────────────────────────────────
+# -- SSRF guard ----------------------------------------------------------------
 
 def test_ssrf_private_and_special_hosts_blocked():
-    """URL даёт LLM: приватные/зарезервированные адреса, localhost, *.local,
-    нестандартные схема и порт — не скачиваются никогда."""
+    """LLM-provided URLs with private/reserved addresses, localhost, *.local,
+    or a non-standard scheme and port are never fetched."""
     for url in (
         "http://192.168.1.1/admin", "http://10.0.0.5/x", "http://127.0.0.1/x",
         "http://172.16.0.9/x", "http://169.254.169.254/latest/meta-data",  # cloud metadata
@@ -33,22 +34,22 @@ def test_ssrf_private_and_special_hosts_blocked():
         "http://[::1]/x", "http://[fe80::1]/x", "http://[fc00::5]/x",
         "http://localhost/x", "http://printer.local/x",
         "ftp://93.184.216.34/x", "gopher://93.184.216.34/x",
-        "http://93.184.216.34:8080/x",  # только стандартные порты
+        "http://93.184.216.34:8080/x",  # standard ports only
     ):
         assert not vf._url_allowed(url), url
 
 
 def test_ssrf_public_host_allowed(monkeypatch):
-    """Публичный хост (DNS замокан — сети нет) проходит гвард."""
+    """A public host (DNS mocked, no network) passes the guard."""
     monkeypatch.setattr(vf.socket, "getaddrinfo",
                         lambda h, p: [(socket.AF_INET, socket.SOCK_STREAM, 6, "",
                                        ("93.184.216.34", 443))])
     assert vf._url_allowed("https://example.com/a")
-    assert vf._url_allowed("https://93.184.216.34:443/a")  # стандартный порт ок
+    assert vf._url_allowed("https://93.184.216.34:443/a")  # the standard port is fine
 
 
 def test_ssrf_dns_rebinding_blocked(monkeypatch):
-    """Хост с публичной и приватной A-записью (DNS-rebinding в интранет) — блок."""
+    """A host with both a public and a private A record (DNS rebinding into an intranet) is blocked."""
     monkeypatch.setattr(vf.socket, "getaddrinfo", lambda h, p: [
         (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 443)),
         (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("192.168.0.1", 443))])
@@ -56,7 +57,7 @@ def test_ssrf_dns_rebinding_blocked(monkeypatch):
 
 
 def test_ssrf_redirect_to_private_blocked():
-    """Redirect на приватный адрес не скачивается: каждый хоп перепроверяется."""
+    """A redirect to a private address is not fetched: every hop is re-checked."""
     seen = []
 
     def handler(request):
@@ -64,25 +65,25 @@ def test_ssrf_redirect_to_private_blocked():
         return httpx.Response(302, headers={"location": "http://192.168.0.1/secret"})
 
     assert vf.verify_source(PUB, LONG_QUOTE, transport=_transport(handler)) == "unreachable"
-    assert seen == ["93.184.216.34"]  # на приватный хост запроса не было
+    assert seen == ["93.184.216.34"]  # no request ever reached the private host
 
 
 def test_verify_source_ssrf_literal_unreachable():
-    """Прямой запрос к metadata-эндпоинту облачного хоста — блок без сети."""
+    """A direct request to a cloud metadata endpoint is blocked without any network."""
     assert vf.verify_source("http://169.254.169.254/meta", LONG_QUOTE) == "unreachable"
 
 
 class _Stop(Exception):
-    """Sentinel: перехватили адрес коннекта, реальный сокет не нужен."""
+    """Sentinel: the connect address is captured, no real socket needed."""
 
 
 def test_dns_rebinding_pinned_to_validated_ip(monkeypatch):
-    """P1 TOCTOU-оракул: резолв для гварда и «резолв коннекта» дают разные
-    адреса (TTL-0 DNS) — соединение всё равно идёт только на валидированный
-    IP, имя до сокета не доходит."""
+    """TOCTOU oracle: the guard resolve and the connect resolve return
+    different addresses (TTL-0 DNS), yet the connection still goes only to
+    the validated IP; the hostname never reaches the socket."""
     resolutions = iter([
         [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 443))],
-        [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", 443))],  # «второй» резолв
+        [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", 443))],  # the "second" resolve
     ])
     monkeypatch.setattr(vf.socket, "getaddrinfo", lambda h, p: next(resolutions))
     connected = []
@@ -94,11 +95,11 @@ def test_dns_rebinding_pinned_to_validated_ip(monkeypatch):
     monkeypatch.setattr(vf.socket, "create_connection", fake_create_connection)
     with pytest.raises(_Stop):
         vf._GuardedBackend().connect_tcp("evil.example", 443)
-    assert connected == [("93.184.216.34", 443)]  # пин: только валидированный IP
+    assert connected == [("93.184.216.34", 443)]  # pinned to the validated IP only
 
 
 def test_guarded_backend_blocks_mixed_resolution(monkeypatch):
-    """Список [публичный, приватный] = rebinding-попытка: коннекта нет вовсе."""
+    """A [public, private] resolution list is a rebinding attempt: no connect at all."""
     monkeypatch.setattr(vf.socket, "getaddrinfo", lambda h, p: [
         (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 443)),
         (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("10.0.0.7", 443))])
@@ -106,10 +107,10 @@ def test_guarded_backend_blocks_mixed_resolution(monkeypatch):
         vf._GuardedBackend().connect_tcp("evil.example", 443)
 
 
-# ── fetch / extract_text / verify_source ─────────────────────────────────────
+# -- fetch / extract_text / verify_source -------------------------------------
 
 def test_verify_source_verified_despite_typography():
-    """Честная цитата найдётся после normalize: раскладка кавычек/тире/ё."""
+    """An honest quote is found after normalize: quote/dash/yo typography."""
     def handler(request):
         return httpx.Response(200, text=
                               "<html><body><p>Он заявил: «Ёлки-палки — это прошлое» "
@@ -119,7 +120,7 @@ def test_verify_source_verified_despite_typography():
 
 
 def test_verify_source_not_found_on_paraphrase():
-    """Парафраз не равен оригиналу: страница о другом — цитаты в ней нет."""
+    """A paraphrase is not the original: the page is about something else, the quote is not there."""
     def handler(request):
         return httpx.Response(200, text="<html><body><p>В 2019 году исследование "
                               "показало значительное снижение артериального давления "
@@ -130,7 +131,7 @@ def test_verify_source_not_found_on_paraphrase():
 
 
 def test_verify_source_unreachable_on_404_and_timeout():
-    """Не-200 и таймаут — unreachable: это не вина источника."""
+    """Non-200 and timeout mean unreachable: not the source's fault."""
     def not_found(request):
         return httpx.Response(404)
     assert vf.verify_source(PUB, LONG_QUOTE, transport=_transport(not_found)) == "unreachable"
@@ -141,8 +142,8 @@ def test_verify_source_unreachable_on_404_and_timeout():
 
 
 def test_drip_feed_body_hits_deadline(monkeypatch):
-    """P2: drip-feed (байт раз в 7 с) живёт под каждым per-op таймаутом —
-    общий монотонный дедлайн рвёт fetch (часы подменены, без sleep)."""
+    """Drip-feed (a byte every 7s) stays under every per-op timeout, so the
+    shared monotonic deadline cuts the fetch (clock mocked, no sleep)."""
     ticks = iter([0.0] + [100.0] * 1000)
     monkeypatch.setattr(vf, "_now", lambda: next(ticks))
 
@@ -157,8 +158,8 @@ RU_SENTENCE = "Ёлки-палки — это прошлое, сказал он 
 
 
 def test_cp1251_page_without_charset_verified():
-    """P2: cp1251 без объявленного charset — сниффинг доли U+FFFD подводит
-    к cp1251, честный источник не умирает как not_found из-за мусора."""
+    """cp1251 without a declared charset: the U+FFFD-ratio sniff points to
+    cp1251, so an honest source is not killed as not_found by garbage."""
     body = f"<html><body><p>{RU_SENTENCE}</p></body></html>".encode("cp1251")
 
     def handler(request):
@@ -170,8 +171,8 @@ def test_cp1251_page_without_charset_verified():
 
 
 def test_meta_charset_sniffed_over_lying_header():
-    """P2: <meta charset> точнее лживого iso-8859-1 заголовка — мета-charset
-    приоритетнее при декодировании."""
+    """A <meta charset> beats a lying iso-8859-1 header: meta charset takes
+    priority when decoding."""
     body = ('<html><head><meta charset="windows-1251"></head><body>'
             f"<p>{RU_SENTENCE}</p></body></html>").encode("cp1251")
 
@@ -185,39 +186,39 @@ def test_meta_charset_sniffed_over_lying_header():
 
 
 def test_extract_text_drops_invisible_tags():
-    """script/style/noscript/template не участвуют в сверке — только видимый текст."""
+    """script/style/noscript/template take no part in matching: visible text only."""
     html = ("<html><head><script>alert(1)</script><style>.x{color:red}</style></head>"
             "<body><noscript>включите js</noscript><template><div>шаблон</div></template>"
             "<p>Видимый   текст</p><div>второй блок</div></body></html>")
     assert vf.extract_text(html) == "Видимый текст второй блок"
 
 
-# ── normalize / quote_in_text ─────────────────────────────────────────────────
+# -- normalize / quote_in_text ------------------------------------------------
 
 def test_normalize_quotes_dashes_yo():
     assert vf.normalize("«Ёл» – «Мёд» — C−2") == "'ел' - 'мед' - c-2"
-    assert vf.normalize("сло\u00adво") == "слово"      # мягкий перенос выкидывается
-    assert vf.normalize("a   b\t\nc") == "a b c"        # пробелы схлопываются
+    assert vf.normalize("сло\u00adво") == "слово"      # the soft hyphen is dropped
+    assert vf.normalize("a   b\t\nc") == "a b c"        # whitespace collapses
 
 
 def test_quote_in_text_exact_beats_fuzzy():
-    """Точное вхождение после normalize — без оглядки на длину цитаты."""
+    """An exact post-normalize match wins regardless of quote length."""
     text = "Он заявил: «Ёлки-палки — это прошлое» и ушёл."
     assert vf.quote_in_text("“Ёлки–палки - это прошлое”", text)
 
 
 def test_quote_in_text_fuzzy_window():
-    """Выпавшее слово (разметка съела) прощается; замена слова и перевод —
-    уже парафраз, фильтр порядка/токенов отбраковывает."""
+    """A dropped word (eaten by markup) is forgiven; a word swap or a
+    translation is already a paraphrase, rejected by the order/token checks."""
     sentence = "the study found that sleep deprivation significantly degrades " \
                "cognitive performance over many nights of testing"
     text = "Background and methods. " + sentence + " Conclusions follow."
     assert vf.quote_in_text(
-        "sleep deprivation degrades cognitive performance", text)  # слово выпало
+        "sleep deprivation degrades cognitive performance", text)  # a word was dropped
     long_page = "filler text block. " * 400 + text + " other filler. " * 400
     assert vf.quote_in_text(
         "sleep deprivation degrades cognitive performance", long_page)
-    # замена слова = парафраз: токена «strongly» на странице нет
+    # a word swap is a paraphrase: the token "strongly" is not on the page
     assert not vf.quote_in_text(
         "sleep deprivation strongly degrades cognitive performance", text)
     assert not vf.quote_in_text(
@@ -225,21 +226,21 @@ def test_quote_in_text_fuzzy_window():
 
 
 def test_tokens_in_order_filters_reorder():
-    """P2-юнит: порядок слов. Пересобранная последовательность — не
-    подпоследовательность текста; выпавшее слово текста — допустимый пропуск."""
+    """Word-order unit check. A reassembled sequence is not a subsequence
+    of the text; a dropped source word is an allowed skip."""
     qt = "the drug increases mortality sharply said the study".split()
     page = "the study said the drug increases mortality sharply".split()
-    assert not vf._tokens_in_order(qt, page)  # слова те же, порядок чужой
+    assert not vf._tokens_in_order(qt, page)  # same words, different order
     honest = "sleep deprivation degrades cognitive performance".split()
     page_honest = ("sleep deprivation significantly degrades cognitive "
                    "performance".split())
-    assert vf._tokens_in_order(honest, page_honest)  # слово текста пропущено
+    assert vf._tokens_in_order(honest, page_honest)  # a source word is skipped
     assert vf._tokens_in_order("testi testing".split(), "testing testi".split()) is False
 
 
 def test_word_reorder_rejected():
-    """P2: пересобранная из слов цитата держит char-ratio ≥ 0.82, но нарушает
-    порядок токенов → not_found."""
+    """A quote reassembled from page words keeps char-ratio >= 0.82 but
+    breaks token order, hence not_found."""
     page = ("<html><body><p>The study said the drug increases mortality "
             "sharply over many nights.</p></body></html>")
 
@@ -252,22 +253,21 @@ def test_word_reorder_rejected():
 
 
 def test_deep_quote_with_damaged_ends_found():
-    """P2: честная цитата на глубине > 42k с повреждёнными концами (нет
-    первого слова, хвост обрезан) находится якорными половинами — окно с
-    шагом len/4 туда не достаёт."""
+    """An honest quote deeper than 42k with damaged ends (first word missing,
+    tail cut) is found via anchor halves; a len/4-step window cannot reach it."""
     orig = ("The study found that sleep deprivation significantly degrades "
             "cognitive performance during prolonged testing periods")
     deep = "filler text block. " * 2500 + orig + " trailing filler."
-    assert len(deep.split(orig)[0]) > 42_000  # преамбула действительно глубокая
+    assert len(deep.split(orig)[0]) > 42_000  # the preamble is genuinely deep
     damaged = ("study found that sleep deprivation significantly degrades "
                "cognitive performance during prolonged testi")
     assert vf.quote_in_text(damaged, deep)
 
 
-# ── интеграция в verdict ──────────────────────────────────────────────────────
+# -- verdict integration ------------------------------------------------------
 
 def _sonar_with_sources(sources):
-    """Мок llm по паттерну test_verdict_trust: оба прохода дают одинаковый JSON."""
+    """llm mock following the test_verdict_trust pattern: both passes return the same JSON."""
     def fake_chat(messages, **kw):
         return json.dumps({"verdict": "правда", "why": "x", "sources": sources},
                           ensure_ascii=False)
@@ -275,18 +275,19 @@ def _sonar_with_sources(sources):
 
 
 def test_verdict_drops_not_found_source(monkeypatch):
-    """not_found = вероятный парафраз/выдумка: источник удалён из votes,
-    уверенность падает как при пустом списке источников (README-обещание)."""
+    """not_found means a likely paraphrase or fabrication: the source is
+    dropped from votes and confidence falls as with an empty source list
+    (the README promise)."""
     monkeypatch.setattr(ve.llm, "chat", _sonar_with_sources(
         [{"title": "T", "url": "https://reuters.com/a", "quote": LONG_QUOTE}]))
     monkeypatch.setattr(ve.verify, "verify_source", lambda url, quote: "not_found")
     res = ve.check("утверждение", "ru")
     assert res["votes"] == [] and res["relevant"] == 0
-    assert res["confidence"] == "низкая"  # формула пустого списка: 0.6-0.15
+    assert res["confidence"] == "низкая"  # empty-list formula: 0.6 - 0.15
 
 
 def test_verdict_keeps_unreachable_source(monkeypatch):
-    """unreachable — не вина источника: остаётся в votes с флажком."""
+    """unreachable is not the source's fault: it stays in votes with a flag."""
     monkeypatch.setattr(ve.llm, "chat", _sonar_with_sources(
         [{"title": "T", "url": "https://reuters.com/a", "quote": LONG_QUOTE}]))
     monkeypatch.setattr(ve.verify, "verify_source", lambda url, quote: "unreachable")
@@ -294,11 +295,11 @@ def test_verdict_keeps_unreachable_source(monkeypatch):
     assert len(res["votes"]) == 1
     assert res["votes"][0]["verify"] == "unreachable"
     assert res["votes"][0]["domain"] == "reuters.com"
-    assert res["confidence"] == "средняя"  # источник с trust 1.0 остался
+    assert res["confidence"] == "средняя"  # the trust-1.0 source stayed
 
 
 def test_verdict_verifies_only_top2_by_trust(monkeypatch):
-    """Бюджет латентности: fetch только у топ-2 по trust, остальные skipped."""
+    """Latency budget: only the top-2 by trust get fetched, the rest are skipped."""
     monkeypatch.setattr(ve.llm, "chat", _sonar_with_sources([
         {"title": "R", "url": "https://reuters.com/a", "quote": LONG_QUOTE},
         {"title": "B", "url": "https://bbc.com/b", "quote": LONG_QUOTE},
@@ -319,7 +320,7 @@ def test_verdict_verifies_only_top2_by_trust(monkeypatch):
 
 
 def test_verdict_verify_disabled_no_fetch(monkeypatch):
-    """VFC_QUOTE_VERIFY=0 — слой выключен: fetch нет, источник помечен skipped."""
+    """VFC_QUOTE_VERIFY=0 disables the layer: no fetch, the source is marked skipped."""
     def boom(url, quote):
         raise AssertionError("verify_source не должен вызываться при выключенном слое")
     monkeypatch.setattr(ve.verify, "verify_source", boom)
@@ -328,14 +329,14 @@ def test_verdict_verify_disabled_no_fetch(monkeypatch):
         [{"title": "T", "url": "https://reuters.com/a", "quote": LONG_QUOTE}]))
     res = ve.check("утверждение", "ru")
     assert res["votes"][0]["verify"] == "skipped"
-    assert len(res["votes"]) == 1  # источник не удалён и не проверялся
+    assert len(res["votes"]) == 1  # the source is neither dropped nor verified
     assert not vf.enabled()
 
 
 def test_verdict_short_quote_skips_verify(monkeypatch):
-    """Короткая цитата не сверяется: fuzzy на маленьких строках — шум,
-    точная сверка односимвольных тривиальна (поэтому кейс test_security_fixes
-    остаётся без сети)."""
+    """Short quotes are not verified: fuzzy on tiny strings is noise, and
+    exact matching of one-char strings is trivial (so the test_security_fixes
+    case stays offline)."""
     def boom(url, quote):
         raise AssertionError("короткая цитата не должна уходить на сверку")
     monkeypatch.setattr(ve.verify, "verify_source", boom)
@@ -345,7 +346,7 @@ def test_verdict_short_quote_skips_verify(monkeypatch):
     assert res["votes"][0]["verify"] == "skipped"
 
 
-# ── plausibility: цитата обязана быть из абстракта ───────────────────────────
+# -- plausibility: the quote must come from the abstract ---------------------
 
 def _plaus(monkeypatch, reply, abstract):
     import videofactcheck.plausibility as pl
@@ -359,8 +360,8 @@ def _plaus(monkeypatch, reply, abstract):
 
 
 def test_plausibility_quote_not_from_abstract_is_silent(monkeypatch):
-    """Корпус в собственных руках: цитата не из абстракта → весь ответ NLI
-    недостоверен → слой молчит (правило В18)."""
+    """The corpus is under our control: a quote not from the abstract makes
+    the whole NLI reply untrusted, so the layer stays silent (no quote, no vote)."""
     reply = json.dumps({"relation": "refutes", "relevance": "directly_on_topic",
                         "why": "Наука против.",
                         "quote": "made up quote that appears nowhere in the abstract",

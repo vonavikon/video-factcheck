@@ -1,4 +1,4 @@
-"""CLI: start the extension server with `vfc serve`; check a single video with `vfc check <url>`."""
+"""CLI: run the server for the extension with `vfc serve`. Check a single video with `vfc check <url>`."""
 import argparse
 import sys
 
@@ -33,12 +33,12 @@ def main() -> None:
             time.sleep(2)
         print()
         if st["status"] == "error":
-            print("ОШИБКА:", st["error"])
+            print("ERROR:", st["error"])
             sys.exit(1)
         s = st.get("summary", {})
-        print(f"\n{s.get('title')} — {s.get('claims_total')} утверждений, "
-              f"проверено {s.get('checked')}, мнений вне проверки {s.get('skipped_opinions')}")
-        print("Счёт:", s.get("counts"))
+        print(f"\n{s.get('title')} - {s.get('claims_total')} claims, "
+              f"checked {s.get('checked')}, opinions outside checking {s.get('skipped_opinions')}")
+        print("Counts:", s.get("counts"))
         for c in st.get("claims", []):
             mark = c.get("verdict") or "—"
             print(f"  [{mark}] {c['claim'][:90]}")

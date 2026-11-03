@@ -1,4 +1,4 @@
-"""Scenarios for stages 1 and 3: claim dedup, unwrapping bing redirects, junk filtering."""
+"""Stage 1 and 3 scenarios: claim dedup, bing redirect unwrapping, junk filter."""
 import base64
 
 from videofactcheck import claims as cl
@@ -16,7 +16,7 @@ def test_unwrap_bing_valid():
 
 def test_unwrap_bing_malformed_falls_back():
     href = "https://www.bing.com/ck/a?!&&p=abc&u=a1###broken###&ntb=1"
-    assert se._unwrap_bing(href) == href  # broken base64 → the original link, no crash
+    assert se._unwrap_bing(href) == href  # broken base64 falls back to the original link, no crash
 
 
 def test_unwrap_bing_plain_passthrough():
@@ -31,7 +31,7 @@ def test_junk_domains_filtered():
         {"title": "d", "url": "https://reuters.com/another", "snippet": ""},  # duplicate domain
     ]
     out = se.search_web.__wrapped__ if hasattr(se.search_web, "__wrapped__") else None
-    # go through the internal filter: call the logic directly
+    # exercise the internal filter: call the logic directly
     filtered, seen = [], set()
     for r in raw:
         dom = se._domain(r["url"])
@@ -44,7 +44,7 @@ def test_junk_domains_filtered():
 
 def test_claim_hash_dedup():
     h1 = cl.claim_hash("В 2020 году произошло событие X!")
-    h2 = cl.claim_hash("в 2020 году произошло событие  x")  # case/punctuation/whitespace
+    h2 = cl.claim_hash("в 2020 году произошло событие  x")  # case/punctuation/spacing differences
     h3 = cl.claim_hash("Совсем другое утверждение")
     assert h1 == h2 and h1 != h3
 

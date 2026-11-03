@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-  <!-- A, the 16 px variant: bigger shapes, thicker strokes. On a small grid
-       the checkmark must read as a white notch, not disappear -->
+  <!-- A, the 16px variant: larger shapes, thicker strokes. On the small grid
+       the check mark must read as a white notch, not disappear -->
   <path d="M50 24 L104 64 L50 104 Z" fill="#2F6FED" stroke="#2F6FED" stroke-width="22" stroke-linejoin="round"/>
   <path d="M59 64 L69 74 L86 52" fill="none" stroke="#ffffff" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

@@ -1,7 +1,8 @@
-"""Stage 0: timestamped transcript via yt-dlp captions (decisions B6-B8).
+"""Stage 0: transcript with timestamps via yt-dlp captions.
 
-Minimal own VTT parser that strips rolling duplicates from auto-subs;
-timestamps are untouched, only text is cleaned (B8). Whisper fallback is planned for iteration 2.
+A minimal VTT parser of our own that cleans rolling repeats of auto subs:
+timestamps are untouched, only text is cleaned. Whisper fallback is a later
+iteration.
 """
 import re
 import subprocess
@@ -15,7 +16,7 @@ TAGS = re.compile(r"<[^>]+>|\{\\[^}]*\}")
 
 
 def _ytdlp_base() -> list[str]:
-    """yt-dlp + proxy from VFC_YTDLP_PROXY (e.g. a local SOCKS tunnel)."""
+    """yt-dlp plus a proxy from VFC_YTDLP_PROXY (optional)."""
     import os
     proxy = os.environ.get("VFC_YTDLP_PROXY", "")
     base = ["yt-dlp", "--no-update", "--skip-download"]
@@ -29,8 +30,8 @@ def _sec(h: str, m: str, s: str, ms: str) -> float:
 
 
 def fetch(url: str, langs: str = "ru,ru-orig,en,en-orig") -> dict:
-    """Downloads subtitles (manual first, then auto-subs) → metadata + cues."""
-    # SEC-6: YouTube-watch URLs only (anti-SSRF for yt-dlp)
+    """Downloads subtitles (manual first, then auto subs) → metadata + cues."""
+    # only YouTube watch URLs (anti-SSRF for yt-dlp)
     from urllib.parse import urlparse
     _p = urlparse(url if "://" in url else "https://" + url)
     if not (_p.netloc == "youtube.com" or _p.netloc.endswith(".youtube.com")
@@ -74,7 +75,7 @@ def fetch(url: str, langs: str = "ru,ru-orig,en,en-orig") -> dict:
                     "duration": float(duration or 0),
                     "lang": lang, "sub_kind": kind, "cues": cues,
                 }
-        # yt-dlp failed (429 from YouTube on a datacenter IP etc.); this is not "no subs"
+        # yt-dlp failed (429 from YouTube for a datacenter IP etc.): that is not "no subs"
         if dl.returncode != 0 or "429" in dl.stderr or "Too Many Requests" in dl.stderr:
             import sys
             print(f"[transcript:err] yt-dlp: {dl.stderr.strip()[:400]}", file=sys.stderr)
@@ -88,19 +89,19 @@ def fetch(url: str, langs: str = "ru,ru-orig,en,en-orig") -> dict:
 
 def _parse_vtt(path: Path) -> list[dict]:
     """VTT → cues [{start,end,text}]. Block parsing per the WebVTT spec:
-    a cue block = optional identifier line + timing line + text up to a blank
-    line; the identifier is discarded (test TR: "1", "2" must not stick
-    to the previous cue's text). Rolling duplicates from auto-subs are removed after.
+    a cue block = optional identifier line + timing line + text up to an empty
+    line; the identifier is discarded (unit test: "1", "2" must not glue to
+    the previous cue's text). Rolling duplicates of auto subs are removed after.
     """
     text = path.read_text(encoding="utf-8", errors="replace")
-    # cut off the WEBVTT header and metadata up to the first blank line
+    # cut the WEBVTT header and metadata up to the first empty line
     body = text.split("\n\n", 1)[1] if text.startswith("WEBVTT") else text
     cues: list[dict] = []
     for block in body.split("\n\n"):
         lines = [ln.strip("\r") for ln in block.strip().splitlines() if ln.strip()]
         ts_idx = next((i for i, ln in enumerate(lines) if "-->" in ln), None)
         if ts_idx is None:
-            continue  # block without timing: note/style/orphan identifier
+            continue  # block without timing: a note/style/orphan identifier
         m = TS.search(lines[ts_idx])
         if not m:
             continue
@@ -114,12 +115,12 @@ def _parse_vtt(path: Path) -> list[dict]:
         cue_text = " ".join(t for t in body_lines if t and t != "&nbsp;")
         if not cue_text:
             continue
-        # rolling repeats: same text, or contained in the previous cue
+        # rolling repeats: same text or contained in the previous cue
         prev = cues[-1]["text"] if cues else ""
         if cue_text == prev or (prev and cue_text in prev):
             continue
         if prev and prev in cue_text:
-            cues[-1]["text"] = cue_text  # auto-subs extend the line, keep the full one
+            cues[-1]["text"] = cue_text  # auto subs extend the line: keep the full one
             cues[-1]["end"] = max(cues[-1]["end"], end)
             continue
         cues.append({"start": start, "end": end, "text": cue_text})
@@ -135,7 +136,7 @@ def _parse_vtt(path: Path) -> list[dict]:
 
 
 def to_segments(cues: list[dict], max_chars: int = 220, max_gap: float = 2.5) -> list[dict]:
-    """Cues → LLM segments: [{id, t_start, t_end, text}] (~1-2 sentences)."""
+    """Cues → segments for the LLM: [{id, t_start, t_end, text}] (~1-2 sentences)."""
     segs: list[dict] = []
     cur: dict = {}
     for c in cues:

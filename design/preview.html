@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>video-factcheck: panel preview, all states (texts per extension/content.js, en)</title>
+<title>video-factcheck — panel preview, all states (synced with extension/content.js v0.6.2)</title>
 <style>
   body { background: #0f0f0f; color: #e8e8e8; font: 14px/1.5 Roboto, "Segoe UI", system-ui, sans-serif; margin: 0; padding: 24px; }
   h1 { font-size: 18px; font-weight: 500; margin: 0 0 4px; }
@@ -16,7 +16,6 @@
   .ver { font-weight: 400; font-size: 10px; color: #7c828a; }
   .sub { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #9aa0a6; line-height: 1.2; }
   .sub .dot { width: 5px; height: 5px; border-radius: 50%; background: #9aa0a6; flex: none; }
-  .sub.up { color: #7bd88f; } .sub.up .dot { background: #7bd88f; }
   .sub.down { color: #ff8a80; } .sub.down .dot { background: #ff8a80; }
   .spacer { flex: 1; }
   .run { background: #cc2b24; border: none; color: #fff; padding: 6px 14px; border-radius: 999px; font: 600 12px Roboto, system-ui, sans-serif; cursor: pointer; }
@@ -83,54 +82,54 @@
 </style>
 </head>
 <body>
-<h1>video-factcheck: all panel states</h1>
-<div class="sub">v0.9.1: the panel is a floating r12 card with a 0 4px 16px shadow; the header holds the server line, profile, "↓ .md", "−", "×"; feed tabs "Text/Facts". Soft shapes, hard links (reviews/2026-10-28-screens.md), tokens in design/tokens.json</div>
+<h1>video-factcheck — all panel states</h1>
+<div class="sub">v0.6.2: the panel is a floating card, r12 on all sides, shadow 0 4px 16px; the header carries the server line, profile, "↓ .md", "−", "×"; the Text/Facts feed. The rounded language of "soft objects, hard links" (reviews/2026-10-28-screens.md), tokens in design/tokens.json</div>
 
 <div class="row">
   <div><div class="panel">
-    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.9.1</span></b><span class="sub up"><i class="dot"></i>server is up</span></div><span class="spacer"></span><button class="run">Check video</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="fold">−</button><button class="fold close">×</button></div>
-    <div class="status"><span>Click "Check video" to start</span></div>
+    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.6.2</span></b><span class="sub"><i class="dot"></i>server is up</span></div><span class="spacer"></span><button class="run">Check video</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="fold">−</button><button class="fold close">×</button></div>
+    <div class="status"><span>Click “Check video” to start</span></div>
     <div class="feed"><div class="idlebox"><div class="legend"><span class="lg"><i style="background:#7bd88f"></i>true</span><span class="lg"><i style="background:#ff8a80"></i>false</span><span class="lg"><i style="background:#ffd666"></i>unclear</span></div><div class="idlebal">free today: 10 · credits: 32</div></div></div>
   </div><p class="cap">idle · verdict legend + balance line</p></div>
 
   <div><div class="panel">
-    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.9.1</span></b><span class="sub up"><i class="dot"></i>server is up</span></div><span class="spacer"></span><button class="run dis">Checking…</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="fold">−</button><button class="fold close">×</button></div>
+    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.6.2</span></b><span class="sub"><i class="dot"></i>server is up</span></div><span class="spacer"></span><button class="run dis">Checking…</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="fold">−</button><button class="fold close">×</button></div>
     <div class="status"><div class="spin"></div><span>Finding claims: 8/29</span></div>
     <div class="feedtabs"><button class="ftab active">Text</button><button class="ftab">Facts</button></div>
     <div class="feed">
-      <div class="tgroup"><div class="tline"><span class="ts">0:12</span><span class="ttext">My colleagues and I have spent years studying mass extinctions…</span></div><div class="tline cont"><span class="ttext">…and today I will talk about the five biggest ones.</span></div></div>
-      <div class="tgroup"><div class="tline"><span class="ts">0:44</span><span class="ttext">The first and the best known is the Permian extinction, it wiped out nearly everything…</span></div></div>
+      <div class="tgroup"><div class="tline"><span class="ts">0:12</span><span class="ttext">My colleagues and I have studied mass extinctions for many years…</span></div><div class="tline cont"><span class="ttext">…and today I will tell you about the five largest of them.</span></div></div>
+      <div class="tgroup"><div class="tline"><span class="ts">0:44</span><span class="ttext">The first and best known is the Permian extinction, it wiped out almost everything…</span></div></div>
       <div class="tmore">··· 14 more fragments</div>
     </div>
-  </div><p class="cap">running · the transcript streams immediately, 30s groups, "··· N more"</p></div>
+  </div><p class="cap">running · the transcript streams at once (feature A), 30s groups, "··· N more"</p></div>
 
   <div><div class="panel">
-    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.9.1</span></b><span class="sub up"><i class="dot"></i>server is up</span></div><span class="spacer"></span><button class="run dis">Checking…</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="dl" title="Download .md">↓</button><button class="fold">−</button><button class="fold close">×</button></div>
+    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.6.2</span></b><span class="sub"><i class="dot"></i>server is up</span></div><span class="spacer"></span><button class="run dis">Checking…</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="dl" title="Download .md">↓</button><button class="fold">−</button><button class="fold close">×</button></div>
     <div class="status"><div class="spin"></div><span>Checking claims: 3/15 · 1:24 · <a class="skip" href="#">skip waiting</a></span></div>
     <div class="feedtabs"><button class="ftab active">Text</button><button class="ftab">Facts</button></div>
     <div class="feed">
       <div class="tgroup">
-        <div class="tline"><span class="ts">0:23</span><span class="ttext">…there have been five mass extinctions on Earth…</span></div>
+        <div class="tline"><span class="ts">0:23</span><span class="ttext">…the Earth has seen five mass extinctions…</span></div>
         <div class="card"><div class="statebg"><div class="row1"><a class="ts" href="#">0:23</a><span class="badge v-true">true</span><span class="conf" style="color:#7bd88f"><span class="segs"><i class="on"></i><i class="on"></i><i class="on"></i></span><span class="lvl">high</span></span></div>
-          <div class="claim">There have been five mass extinctions on Earth.</div>
-          <div class="why">The paleontological record documents the Big Five events.</div>
+          <div class="claim">The Earth has seen five mass extinctions.</div>
+          <div class="why">The paleontological record documents five "Big Five" events.</div>
           <div class="srcs"><a href="#">wikipedia.org</a><a href="#">britannica.com</a></div></div></div>
       </div>
       <div class="tgroup">
-        <div class="tline"><span class="ts">0:27</span><span class="ttext">…each one wiped out at least three quarters of species…</span></div>
+        <div class="tline"><span class="ts">0:27</span><span class="ttext">…each wiped out at least three quarters of all species…</span></div>
         <div class="card now"><div class="statebg"><div class="row1"><a class="ts" href="#">0:27</a><span class="badge v-false">false</span><span class="conf" style="color:#ffd666"><span class="segs"><i class="on"></i><i class="on"></i><i></i></span><span class="lvl">medium</span></span></div>
-          <div class="claim">Each of the five mass extinctions wiped out at least three quarters of species.</div>
-          <div class="why">The Big Five threshold is 75% of marine species; not every event reached it.</div>
+          <div class="claim">Each of the five mass extinctions wiped out at least three quarters of all species.</div>
+          <div class="why">The "Big Five" threshold is 75% of marine species, not every event reached it.</div>
           <div class="srcs"><a href="#">nature.com</a><a href="#">smithsonianmag.com</a><span class="more">2 more</span></div></div></div>
       </div>
       <div class="tmore">··· 12 more fragments</div>
     </div>
-  </div><p class="cap">running · verdicts land in the transcript by timestamp, the current card is highlighted</p></div>
+  </div><p class="cap">running · verdicts slot into the transcript by timecode, the current card lit by its rail</p></div>
 </div>
 
 <div class="row">
   <div><div class="panel">
-    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.9.1</span></b><span class="sub up"><i class="dot"></i>server is up</span></div><span class="spacer"></span><button class="run" style="display:none">Check again</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="dl" title="Download .md">↓</button><button class="fold">−</button><button class="fold close">×</button></div>
+    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.6.2</span></b><span class="sub"><i class="dot"></i>server is up</span></div><span class="spacer"></span><button class="run">Check again</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="dl" title="Download .md">↓</button><button class="fold">−</button><button class="fold close">×</button></div>
     <div class="status"><span>Done · true 4 · false 1 · unclear 1</span></div>
     <div class="counts" title="6 of 15 claims checked">
       <div class="stackbar"><i style="width:40%;background:#2f9e4f" title="true 4"></i><i style="width:10%;background:#e5484d" title="false 1"></i><i style="width:10%;background:#d9b02f" title="unclear 1"></i><i style="width:40%;background:#9aa0a6" title="no verdict 9"></i></div>
@@ -144,44 +143,44 @@
     <div class="feedtabs"><button class="ftab active">Text</button><button class="ftab">Facts</button></div>
     <div class="feed">
       <div class="card"><div class="statebg"><div class="row1"><a class="ts" href="#">41:12</a><span class="badge v-true">true</span><span class="conf" style="color:#7bd88f"><span class="segs"><i class="on"></i><i class="on"></i><i class="on"></i></span><span class="lvl">high</span></span></div>
-        <div class="claim clamp">Sea lilies looked like plants but were animals, and their stems could reach twenty meters long in the deep waters of the Mesozoic</div>
-        <div class="why">Sea lilies (Crinoidea) are echinoderms, which are animals.</div>
+        <div class="claim clamp">Sea lilies looked like plants but were animals, and their stalk could reach twenty meters in length while living in the deep water of the Mesozoic</div>
+        <div class="why">Sea lilies (Crinoidea) are echinoderms, animals.</div>
         <div class="srcs"><a href="#">britannica.com</a><a href="#">nplus1.ru</a></div></div></div>
       <div class="card"><div class="statebg"><div class="row1"><a class="ts" href="#">41:40</a><span class="badge v-none">unchecked</span></div>
-        <div class="tquote">"This claim is beyond this run's limit"</div>
+        <div class="tquote">"A claim outside this run's limit"</div>
         <div class="tcat">category: historical fact</div></div></div>
     </div>
-  </div><p class="cap">done · stack bar with filters, long claim clamped, note card</p></div>
+  </div><p class="cap">done · the stack bar with filters, a long clamped claim, the note card (feature C)</p></div>
 
   <div><div class="panel">
-    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.9.1</span></b><span class="sub down"><i class="dot"></i>server is not responding</span></div><span class="spacer"></span><button class="run">Check video</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="fold">−</button><button class="fold close">×</button></div>
+    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.6.2</span></b><span class="sub down"><i class="dot"></i>server is not responding</span></div><span class="spacer"></span><button class="run">Check video</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="fold">−</button><button class="fold close">×</button></div>
     <div class="status err"><span>This video has no subtitles, so it cannot be checked</span></div>
     <div class="feed"><div class="empty">verdicts will appear here</div></div>
-  </div><p class="cap">error · a human-readable reason, the server line goes red</p></div>
+  </div><p class="cap">error · the cause in human words, the server line dims</p></div>
 
   <div><div class="panel">
-    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.9.1</span></b><span class="sub up"><i class="dot"></i>server is up</span></div><span class="spacer"></span><button class="run" style="display:none">Check again</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="fold">−</button><button class="fold close">×</button></div>
+    <div class="head"><div class="tt"><b>Fact-check <span class="ver">v0.6.2</span></b><span class="sub"><i class="dot"></i>server is up</span></div><span class="spacer"></span><button class="run">Check again</button><button class="profile" title="Account"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M5.5 20c.9-3.1 3.5-4.8 6.5-4.8s5.6 1.7 6.5 4.8"/></svg></button><button class="fold">−</button><button class="fold close">×</button></div>
     <div class="status"><span>No checkable claims found</span></div>
     <div class="feed"><div class="empty"><b>No checkable claims found</b><br>the video seems to have no facts to check: music, a clip, or pure opinion</div></div>
-  </div><p class="cap">no-claims · the product stays silent on purpose</p></div>
+  </div><p class="cap">no-claims · the product stays honest and quiet</p></div>
 </div>
 
 <div class="row">
   <div><div class="mini-demo" style="display:flex;gap:28px">
     <div class="mini-circle"><span class="mini-ico"><svg viewBox="0 0 24 24" width="22" height="22"><rect x="4.1" y="6.4" width="15.8" height="11.2" rx="3" fill="none" stroke="#2F6FED" stroke-width="2.6"/><path d="M8.6 12 L10.9 14.3 L15.7 8.6" fill="none" stroke="#2F6FED" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="mini-x">×</span></div>
     <div class="mini-circle busy"><span class="mini-ico" style="color:#ffd66e"><svg viewBox="0 0 24 24" width="22" height="22"><rect x="4.1" y="6.4" width="15.8" height="11.2" rx="3" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M8.6 12 L10.9 14.3 L15.7 8.6" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="mini-x">×</span></div>
-  </div><p class="cap">mini · 52px dot, brand sign #2F6FED;<br>busy: amber pulse 1800ms, icon #ffd66e; × 24px hides the panel entirely</p></div>
+  </div><p class="cap">mini · the 52px dot, brand sign #2F6FED;<br>busy is an amber pulse 1800ms, icon #ffd66e; the 24px × hides the panel completely</p></div>
 
   <div><div style="display:flex;gap:10px;align-items:center;padding:20px 0">
     <button class="ytbtn"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6.4" width="15.7" height="11.2" rx="3"/><path d="M8.6 12 L10.9 14.3 L15.7 8.6"/></svg>Fact-check</button>
     <button class="ytbtn"><span class="cnt">7/15</span></button>
     <button class="ytbtn done"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2f9e4f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.3 12.4 L10.8 14.9 L15.8 9"/></svg>Fact-check</button>
-  </div><p class="cap">button under the video (dark): idle · running (counter) · done (check)</p></div>
+  </div><p class="cap">the button under the video (dark): idle · running (counter) · checked (check mark)</p></div>
 
   <div><div style="background:#fff;border-radius:12px;padding:12px;display:flex;gap:10px;align-items:center;justify-content:center;min-width:220px">
     <button class="ytbtn light"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6.4" width="15.7" height="11.2" rx="3"/><path d="M8.6 12 L10.9 14.3 L15.7 8.6"/></svg>Fact-check</button>
     <button class="ytbtn light done"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2f9e4f" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.3 12.4 L10.8 14.9 L15.8 9"/></svg>Fact-check</button>
-  </div><p class="cap">button under the video (light): rgba(0,0,0,.05) → hover .1, text #0f0f0f</p></div>
+  </div><p class="cap">the button under the video (light): rgba(0,0,0,.05) → hover .1, text #0f0f0f</p></div>
 </div>
 
 <div class="row">
@@ -196,10 +195,10 @@
     </div>
     <div class="pop-sec">
       <div class="ptitle">Credits</div>
-      <div class="cexpl">1 credit = 1 AI claim check via web search. Matches with existing human fact-checks are free.</div>
+      <div class="cexpl">1 credit = 1 machine claim check via web search. Matches with published fact-checks are free.</div>
       <div class="packs"><button class="pack">+100</button><button class="pack">+500</button><button class="pack">+2000</button></div>
     </div>
-  </div><p class="cap">account popover: the "check language" row<br>with a 10.5px hint; r10, width 264</p></div>
+  </div><p class="cap">the account popover (v0.6.2): the "check language" row<br>with a 10.5px hint; r10, width 264</p></div>
 </div>
 <style>
   .mini-demo { padding: 24px 0; }

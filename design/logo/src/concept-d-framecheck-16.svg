@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
-  <!-- D (the chosen sign), the small-grid variant: thicker strokes -->
+  <!-- D (picked 2026-10-29), the small-grid variant: thicker strokes -->
   <rect x="18" y="30" width="92" height="68" rx="20" fill="none" stroke="#2F6FED" stroke-width="16"/>
   <path d="M44 64 L58 78 L86 46" fill="none" stroke="#2F6FED" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

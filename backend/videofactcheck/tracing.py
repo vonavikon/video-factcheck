@@ -1,10 +1,10 @@
-"""Langfuse tracing for the pipeline (SDK v5, observation API). Optional:
-enabled by LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY / LANGFUSE_HOST.
-Without keys everything becomes a no-op.
+"""Langfuse tracing of the pipeline (SDK v5, observation API). Optional:
+enabled by the LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY / LANGFUSE_HOST keys.
+Without the keys everything degrades to a no-op.
 
-Layout: a vfc-run root (trace_id = run_id) → nested phase spans; LLM calls
-are logged as generations with usage_details and cost_details (bothub returns cost).
-Extraction runs in threads; workers carry the trace_id via a contextvar.
+Scheme: root vfc-run (trace_id = run_id) -> nested phase spans; LLM calls are
+logged as generations with usage_details and cost_details (bothub returns
+cost). Extraction runs in threads: workers carry trace_id via a contextvar.
 """
 import contextvars
 import hashlib
@@ -31,7 +31,7 @@ def client():
         if _client_ready:
             return _client
         _client_ready = True
-        from . import config  # noqa: F401: guarantees .env is loaded
+        from . import config  # noqa: F401 - ensures .env is loaded
         pub = os.environ.get("LANGFUSE_PUBLIC_KEY", "").strip()
         sec = os.environ.get("LANGFUSE_SECRET_KEY", "").strip()
         if not pub or not sec:
@@ -42,7 +42,7 @@ def client():
                 public_key=pub, secret_key=sec,
                 host=os.environ.get("LANGFUSE_HOST", "http://localhost:3000"),
             )
-        except Exception as e:  # noqa: BLE001: tracing must not break the pipeline
+        except Exception as e:  # noqa: BLE001 - tracing must not crash the pipeline
             print(f"[tracing] langfuse недоступен: {e}")
             _client = None
         return _client
@@ -54,11 +54,11 @@ def enabled() -> bool:
 
 @contextmanager
 def root(run_id: str, metadata: dict | None = None):
-    """The run's root span; trace_id = run_id, everything in the thread nests inside.
+    """Root span of a run; trace_id = run_id, everything in this thread nests inside.
 
-    Important: NEVER swallow exceptions inside a contextmanager: Python
-    raises RuntimeError("generator didn't stop after throw()") on a second
-    yield after throw. Just re-raise.
+    Important: NEVER swallow exceptions inside a contextmanager: Python raises
+    RuntimeError("generator didn't stop after throw()") on a second yield
+    after throw. Just let them propagate.
     """
     _trace_id.set(lf_trace_id(run_id))
     lf = client()
@@ -78,7 +78,7 @@ def root(run_id: str, metadata: dict | None = None):
 
 @contextmanager
 def span(name: str, metadata: dict | None = None):
-    """A nested phase span; parentship via the OTel context."""
+    """Nested phase span; parenting via the OTel context."""
     lf = client()
     if not lf:
         yield None
@@ -95,14 +95,14 @@ def current_trace_id() -> str | None:
 
 
 def set_current_trace_id(tid: str | None) -> None:
-    """Set the trace_id in the current thread (for extraction workers)."""
+    """Set trace_id in the current thread (for extraction workers)."""
     _trace_id.set(tid)
 
 
 def log_generation(*, name: str, model: str, prompt_tail: list, output: str | None,
                    usage: dict | None = None, error: str | None = None):
-    """An LLM call as a generation. Inside the run's thread it nests into the current span;
-    in an extraction worker it attaches to the trace by trace_id (contextvar)."""
+    """An LLM call as a generation. In a run thread it nests into the current
+    span; in an extraction worker it attaches to the trace by trace_id (contextvar)."""
     lf = client()
     tid = _trace_id.get()
     if not lf or not tid:

@@ -1,11 +1,11 @@
-"""Configuration: keys and settings from the environment / .env.
+"""Configuration: keys and parameters from the environment / .env.
 
 Keys are NOT stored in the repo. Variable names:
-  VFC_LLM_BASE_URL   - OpenAI-compatible endpoint (default bothub)
-  VFC_LLM_KEY        - LLM provider API key
-  VFC_LLM_MODEL      - model for extraction/verdicts (default deepseek-v4-flash)
-  VFC_SEARCH_BACKEND - cse | serper (default cse)
-  VFC_CSE_KEY / VFC_CSE_CX  - Google Programmable Search
+  VFC_LLM_BASE_URL: OpenAI-compatible endpoint (default bothub)
+  VFC_LLM_KEY: LLM provider API key
+  VFC_LLM_MODEL: model for extraction/verdicts (default deepseek-v4-flash)
+  VFC_SEARCH_BACKEND: cse | serper (default cse)
+  VFC_CSE_KEY / VFC_CSE_CX: Google Programmable Search
   VFC_SERPER_KEY
 """
 import os

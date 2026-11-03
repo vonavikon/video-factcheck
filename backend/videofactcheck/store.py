@@ -1,4 +1,4 @@
-"""Storage (B21): a single SQLite, everything keyed by run_id, versioned schema."""
+"""Storage: a single SQLite database, everything keyed by run_id, versioned schema."""
 import contextlib
 import json
 import sqlite3
@@ -35,12 +35,12 @@ CREATE TABLE IF NOT EXISTS skips (run_id TEXT, quote TEXT, reason TEXT);
 """
 
 _init_lock = threading.Lock()
-_initialized_paths: set[str] = set()  # init per DB path, not per process: tests override DB_PATH
+_initialized_paths: set[str] = set()  # init per DB path, not per process: tests swap DB_PATH
 
 
 def _init_db(db_path: str, con: sqlite3.Connection) -> None:
-    # schema and migrations, once per DB file, not on every connect (review P1-1):
-    # executescript/ALTER on the hot path hit "database is locked" under load
+    # schema and migrations run once per DB file, not on every connect (code
+    # review fix): executescript/ALTER in the hot path hit "database is locked" under load
     with _init_lock:
         if db_path in _initialized_paths:
             return
@@ -58,9 +58,9 @@ def _init_db(db_path: str, con: sqlite3.Connection) -> None:
 
 def connect():
     # context manager: with connect() as con gives commit + GUARANTEED close
-    # (a bare sqlite3 context manager closes the transaction but not the connection;
-    # review P1-1: a descriptor leak on every update_run/poll). WAL + timeout
-    # keep parallel runs free of "database is locked"
+    # (a bare sqlite3 context manager closes the transaction but not the
+    # connection; code review fix: handle leak on every update_run/poll). WAL +
+    # timeout keep parallel runs free of "database is locked"
     config.DATA_DIR.mkdir(parents=True, exist_ok=True)
     con = sqlite3.connect(config.DB_PATH, timeout=10)
     con.row_factory = sqlite3.Row
@@ -157,7 +157,7 @@ def load_claims(run_id: str) -> list[dict]:
     return out
 
 
-# ── accounts and credits ──────────────────────────────
+# ── accounts and credits ────────────────────────────────────────────────────
 FREE_DAILY = 10
 
 
@@ -178,7 +178,7 @@ def get_or_create_account(install_id: str) -> dict:
 
 def _account_view(row) -> dict:
     free_day, free_used = row["free_day"], row["free_used"] or 0
-    if free_day != _today():  # new day, the quota has reset
+    if free_day != _today():  # new day: the quota has reset
         free_used = 0
         with connect() as con:
             con.execute("UPDATE accounts SET free_day=?, free_used=0 WHERE install_id=?",

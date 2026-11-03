@@ -8,7 +8,7 @@ matched against its visible text: exact match after normalization, else a
 fuzzy window anchored on surviving quote fragments. plausibility.py reuses
 the same matching against local abstracts — no fetch there.
 
-SSRF defence is two-fold (P1 rebinding fix): the URL pre-flight checks
+SSRF defence is two-fold (DNS rebinding fix): the URL pre-flight checks
 scheme/port/localhost and resolves once, and the custom transport pins the
 actual TCP connect to the validated IP — httpcore would otherwise resolve
 the name AGAIN at connect time, letting TTL-0 DNS show the guard a public
@@ -153,7 +153,7 @@ def _url_allowed(url: str) -> bool:
 
 
 class _GuardedBackend(httpcore.SyncBackend):
-    """Connect-time half of the SSRF guard (P1: DNS rebinding / TOCTOU).
+    """Connect-time half of the SSRF guard (DNS rebinding / TOCTOU).
 
     The pre-flight resolved the name once, but httpcore resolves AGAIN inside
     socket.create_connection — and that call iterates every address, so even
@@ -335,7 +335,7 @@ def _tok_key(word: str) -> str:
 
 
 def _tokens_in_order(q_tokens: list[str], w_tokens: list[str]) -> bool:
-    """Word-reorder filter (P2): a reshuffled quote keeps a high char ratio,
+    """Word-reorder filter: a reshuffled quote keeps a high char ratio,
     so additionally require the quote's words to appear as an ordered
     subsequence of the window, tolerating a few skipped page words (markup
     noise) and up to MAX_FUZZY_TOKENS damaged words at the ends."""

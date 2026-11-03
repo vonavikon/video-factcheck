@@ -1,4 +1,4 @@
-"""Этап 2 (ClaimReview): матчинг, порог похожести, маппинг рейтингов, отказоустойчивость."""
+"""Stage 2 (ClaimReview): matching, similarity threshold, rating mapping, failure tolerance."""
 import json
 
 from videofactcheck import factcheck_db as fc
@@ -37,7 +37,7 @@ def test_match_with_human_verdict(monkeypatch):
 
 
 def test_low_similarity_rejected(monkeypatch):
-    """Похожие слова есть, но утверждение о другом — слой не должен врать попаданием."""
+    """Similar words exist, but the claim is about something else: no false hit."""
     monkeypatch.setenv("VFC_FACTCHECK_KEY", "AIzaFake")
     payload = {"claims": [{
         "text": "China invented the paper and gunpowder centuries ago",
@@ -52,7 +52,7 @@ def test_ru_rating_mapping():
     assert fc._map_rating("Ложь")[0] == "ложно"
     assert fc._map_rating("Правда")[0] == "правда"
     assert fc._map_rating("Вводит в заблуждение")[0] == "странно"
-    assert fc._map_rating("Сложно сказать")[0] == "странно"  # незнакомая шкала — осторожно
+    assert fc._map_rating("Сложно сказать")[0] == "странно"  # unknown scale, stay cautious
 
 
 def test_api_error_returns_none(monkeypatch):
@@ -86,7 +86,7 @@ def test_polarity_inversion_rejected(monkeypatch):
 
 
 def test_different_percent_rejected(monkeypatch):
-    """«на 20%» vs «на 30%»: token similarity is 1.0 ("20"/"30" are short
+    """"by 20%" vs "by 30%": token similarity is 1.0 ("20"/"30" are short
     tokens and dropped), only the number guard sees the difference."""
     _mock_review(monkeypatch, "Доля импорта выросла на 30%")
     assert fc.match("Доля импорта выросла на 20%") is None
@@ -94,7 +94,7 @@ def test_different_percent_rejected(monkeypatch):
 
 def test_percent_vs_absolute_points_rejected(monkeypatch):
     """20% and 20 points are different quantities: percent multiset {20} vs
-    absolute multiset {20} — ambiguous enough to reject conservatively."""
+    absolute multiset {20}, ambiguous enough to reject conservatively."""
     _mock_review(monkeypatch, "Безработица в регионе снизилась на 20 пунктов")
     assert fc.match("Безработица в регионе снизилась на 20%") is None
 
@@ -110,7 +110,7 @@ def test_same_numbers_and_direction_still_match(monkeypatch):
 
 
 def test_direction_stems_catch_morphology(monkeypatch):
-    """One stem must cover both aspects: снижается (impf) and снизили (pf)."""
+    """One stem must cover both verb aspects: imperfective and perfective."""
     _mock_review(monkeypatch, "Риск снизили на 20% при вакцинации")
     res = fc.match("Риск снижается на 20% при вакцинации")
     assert res is not None  # same direction (down), only morphology differs
@@ -130,7 +130,7 @@ def test_english_polarity_rejected(monkeypatch):
 
 
 def test_scale_words_folded_into_value(monkeypatch):
-    """«1,5 млн» and «1500000» are the same number after the multiplier."""
+    """The spelled-out multiplier form and plain digits are the same number after the multiplier."""
     _mock_review(monkeypatch, "Государство выделило 1500000 рублей")
     res = fc.match("Государство выделило 1,5 млн рублей")
     assert res is not None
@@ -155,12 +155,12 @@ def test_guard_lets_valid_candidate_through(monkeypatch):
     assert res["verdict"] == "ложно"  # verdict of the valid candidate, not the wrong-number one
 
 
-# --- Review round 2: negation, missing antonym pairs, pp class, thousands ---
+# --- More guards: negation, missing antonym pairs, pp class, thousands ---
 
 def test_negation_ru_rejected(monkeypatch):
-    """«не увеличивает» vs «увеличивает»: sim 1.0, numbers equal — only the
+    """Negation vs the plain verb: sim 1.0, numbers equal, only the
     negation-aware polarity guard sees the contradiction. A negated direction
-    also conflicts with the plain opposite («не увеличивает» vs «снижает»)."""
+    also conflicts with the plain opposite ("not increasing" vs "decreasing")."""
     _mock_review(monkeypatch, "Препарат увеличивает риск заболевания на 20%")
     assert fc.match("Препарат не увеличивает риск заболевания на 20%") is None
     _mock_review(monkeypatch, "Препарат снижает риск заболевания на 20%")
@@ -176,7 +176,7 @@ def test_negation_en_rejected(monkeypatch):
 
 
 def test_price_antonyms_rejected(monkeypatch):
-    """подорожал/подешевел and дороже/дешевле are frequent inversion pairs."""
+    """Price up/down antonym pairs are frequent inversion cases."""
     _mock_review(monkeypatch, "Бензин подешевел на 20%")
     assert fc.match("Бензин подорожал на 20%") is None
     _mock_review(monkeypatch, "Билеты стали дешевле на 20%")
@@ -184,7 +184,7 @@ def test_price_antonyms_rejected(monkeypatch):
 
 
 def test_up_vs_down_movement_rejected(monkeypatch):
-    """«поднялись» was missing while «упали» was caught — asymmetric guard."""
+    """One movement verb was missing while its opposite was caught: asymmetric guard."""
     _mock_review(monkeypatch, "Цены упали на 20%")
     assert fc.match("Цены поднялись на 20%") is None
 
@@ -195,14 +195,14 @@ def test_narashil_vs_sokratil_rejected(monkeypatch):
 
 
 def test_prirost_vs_spad_rejected(monkeypatch):
-    """Prefixed nouns: bare \bрост/\bпад stems do not see прирост/спад."""
+    """Prefixed nouns: bare growth/decline stems miss their prefixed forms."""
     _mock_review(monkeypatch, "Спад продаж составил 20%")
     assert fc.match("Прирост продаж составил 20%") is None
 
 
 def test_percent_points_separate_class(monkeypatch):
-    """20% and 20 процентных пунктов are different quantities; the abbreviation
-    «п.п.» belongs to the same class as the full form."""
+    """20% and 20 percentage points are different quantities; the "p.p."
+    abbreviation belongs to the same class as the full form."""
     _mock_review(monkeypatch, "Инфляция снизилась на 20%")
     assert fc.match("Инфляция снизилась на 20 процентных пунктов") is None
     _mock_review(monkeypatch, "Инфляция снизилась на 20 процентных пунктов")
@@ -210,7 +210,7 @@ def test_percent_points_separate_class(monkeypatch):
 
 
 def test_en_thousand_separator(monkeypatch):
-    """"1,000" is one thousand, not the decimal 1.0 — must match "1000"."""
+    """"1,000" is one thousand, not the decimal 1.0, and must match "1000"."""
     _mock_review(monkeypatch, "The city has 1000 people")
     assert fc.match("The city has 1,000 people") is not None
     _mock_review(monkeypatch, "Ущерб составил 12000000 долларов")
@@ -218,8 +218,8 @@ def test_en_thousand_separator(monkeypatch):
 
 
 def test_no_polarity_trigger_for_plant_and_city_words(monkeypatch):
-    r"""Old \bраст\w* fired on раствор/растение, \bрост\w* on Ростов, rejecting
-    compatible pairs as up/down conflicts."""
+    r"""Old \bраст\w* fired on solution/plant words, \bрост\w* on the city
+    name, rejecting compatible pairs as up/down conflicts."""
     _mock_review(monkeypatch, "Раствор глюкозы снизили до 20%")
     assert fc.match("Раствор содержит 20% глюкозы") is not None
     _mock_review(monkeypatch, "Количество школ снизили до 20 в Ростове")

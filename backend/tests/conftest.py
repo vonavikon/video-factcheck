@@ -1,6 +1,6 @@
-"""Сюита обязана оставаться офлайн: офлайн-гарантия не должна держаться на
-случайности (короткие цитаты старых тестов). Любая попытка реального
-исходящего соединения — ошибка теста, а не тихий сетевой вызов."""
+"""The suite must stay offline: the offline guarantee must not depend on
+luck (short quotes in older tests). Any real outbound connection attempt
+is a test failure, not a silent network call."""
 import socket
 
 import pytest
@@ -8,7 +8,7 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _no_outbound_sockets(monkeypatch):
-    """Block socket-level connects for every test (DNS/HTTP мокаются явно)."""
+    """Block socket-level connects for every test (DNS/HTTP are explicitly mocked)."""
     def _blocked(*args, **kwargs):
         raise AssertionError(
             f"real network connection attempted: {args[:1] if args else kwargs}")

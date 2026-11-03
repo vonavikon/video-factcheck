@@ -4,12 +4,12 @@
  * Colors come from design/tokens.json (dark theme = base panel tokens).
  * The light theme is derived from the same hues for prefers-color-scheme: light
  * (tokens.json has no light values; the derivatives keep the same semantic
- * "fill + colored text" pairs from design/design.md rule #2).
+ * "fill + colored text" pairs from design/design.md rule 2).
  * Fonts: the system stack only (design/design.md "World boundaries": no
  * external resources). Radii: pill objects, cards 8, containers 12.
  */
 
-/* dark theme (default, tokens.json tokens) */
+/* dark theme (default, tokens.json values) */
 :root {
   --bg: #0f0f0f;               /* player_page */
   --panel: #16181d;            /* surface.panel */
@@ -25,7 +25,7 @@
   --primary-bg: #cc2b24;       /* action.primary_bg */
   --primary-fg: #ffffff;       /* action.primary_text */
   --primary-hover: #e1362e;
-  --sign: #2F6FED;             /* brand.sign, the "frame with a checkmark" sign */
+  --sign: #2F6FED;             /* brand.sign, the "frame with a check mark" */
   /* verdict tint+fg pairs (verdict.*) */
   --v-true-bg: #1d3a24;  --v-true-fg: #7bd88f;
   --v-false-bg: #3d1a18; --v-false-fg: #ff8a80;
@@ -37,7 +37,7 @@
   --mono: "Roboto Mono", "Cascadia Mono", Consolas, monospace;
 }
 
-/* light theme: derivatives of the tokens (see the header comment) */
+/* light theme: token derivatives (see the header comment) */
 @media (prefers-color-scheme: light) {
   :root {
     --bg: #f4f5f7;
@@ -50,7 +50,7 @@
     --text: #1b1d22;
     --text-2: #2e3238;
     --muted: #5f656d;
-    --link: #065fd4;           /* the same platform blue, a dark variant for AA contrast */
+    --link: #065fd4;           /* the same platform blue, a darker variant for AA contrast */
     --primary-bg: #cc2b24;
     --primary-fg: #ffffff;
     --primary-hover: #b1251f;
@@ -80,7 +80,7 @@ body {
   padding: 32px 20px 48px;
 }
 
-/* page header: sign + title */
+/* page header: mark + title + language switch */
 .page-head {
   display: flex;
   align-items: center;
@@ -110,7 +110,7 @@ body {
   letter-spacing: .04em;
   padding: 7px 12px;
   cursor: pointer;
-  transition: color 120ms, background-color 120ms; /* hover timing: 120ms */
+  transition: color 120ms, background-color 120ms; /* hover pace: 120ms */
 }
 .lang-switch button[aria-pressed="true"] {
   background: var(--now-bg);
@@ -120,7 +120,7 @@ body {
 
 .page-sub { color: var(--muted); margin: 0 0 24px; }
 
-/* section cards */
+/* card sections */
 .card {
   background: var(--panel);
   border: 1px solid var(--border);
@@ -137,7 +137,7 @@ body {
 .card p:last-child { margin-bottom: 0; }
 .card .muted { color: var(--muted); font-size: 12px; }
 
-/* list of steps/items */
+/* step list */
 .steps { margin: 0; padding: 0; list-style: none; counter-reset: step; }
 .steps li {
   counter-increment: step;
@@ -176,7 +176,7 @@ body {
 .pill.v-strange { background: var(--v-strange-bg); color: var(--v-strange-fg); }
 .pill.v-none    { background: var(--v-none-bg);    color: var(--v-none-fg); }
 
-/* run status in history: dot + word */
+/* run status in history: a dot plus a word */
 .st { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
 .st::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--muted); }
 .st.done::before { background: #2f9e4f; }   /* timeline.true, "all good" */
@@ -233,7 +233,7 @@ select:focus-visible, input:focus-visible { outline: 2px solid var(--sign); outl
 .check-row { display: flex; align-items: flex-start; gap: 10px; }
 .check-row input[type="checkbox"] { width: 16px; height: 16px; margin: 3px 0 0; accent-color: var(--sign); }
 
-/* the "what's free / what costs credits" table */
+/* the "what is free / what costs" table */
 table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .tbl th, .tbl td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--divider); vertical-align: top; }
 .tbl th { color: var(--muted); font-weight: 500; font-size: 12px; }
@@ -264,7 +264,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 /* claim card inside an expanded history entry */
 .claim {
   display: grid;
-  grid-template-columns: 46px 1fr;   /* one shared timecode column: 46px (design.md) */
+  grid-template-columns: 46px 1fr;   /* one shared timecode column, 46px (design.md) */
   gap: 0 10px;
   padding: 8px 0;
   border-top: 1px solid var(--divider);
@@ -284,7 +284,7 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .empty { text-align: center; padding: 36px 16px; color: var(--muted); }
 .empty b { display: block; color: var(--text); font-size: 15px; margin-bottom: 6px; }
 
-/* usage stats (over 30 days) */
+/* stats (usage over 30 days) */
 .stats { display: flex; gap: 12px; flex-wrap: wrap; }
 .stat {
   flex: 1 1 140px;
@@ -310,10 +310,10 @@ table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
 .saved { color: #2f9e4f; font-size: 12px; visibility: hidden; }
 .saved.show { visibility: visible; }
 
-/* content hidden until a language switch must not flicker */
+/* content hidden before a language switch must not flash */
 [hidden] { display: none !important; }
 
-/* prefers-reduced-motion: motion is toned down (design.md "Accessibility") */
+/* prefers-reduced-motion: motion is disabled (design.md, "Accessibility") */
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }

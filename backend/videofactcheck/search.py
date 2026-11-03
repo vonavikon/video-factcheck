@@ -1,9 +1,9 @@
-"""Stage 3: web search per claim (decisions B14-B15).
+"""Stage 3: web search per claim.
 
-Backends: bing (no key, personal testing; works directly from a local RU IP) \
-and serper (production, with VFC_SERPER_KEY; better quality, Google results). \
-DDG was dropped: blocked both locally and from datacenter IPs (anomaly-202).
-Snippets only; full pages are planned for iteration 2.
+Backends: bing (no key, personal testing; works from a local RU IP directly)
+and serper (production, with VFC_SERPER_KEY: better quality, Google results).
+DDG was dropped: blocked both locally and from datacenter IPs.
+Snippets only; pages are a later iteration.
 """
 import base64
 import html as html_mod
@@ -39,9 +39,9 @@ def _proxy() -> str | None:
 
 
 def _unwrap_bing(href: str) -> str:
-    """bing.com/ck/a?!&&p=...&u=a1<base64url of the real URL> → URL.
+    """bing.com/ck/a?!&&p=...&u=a1<base64url of the real URL> -> URL.
 
-    On broken/forged base64 return the original link rather than a garbage URL.
+    A broken/forged base64 returns the original link, not a garbage URL.
     """
     try:
         q = parse_qs(urlparse(href).query)
@@ -57,7 +57,7 @@ def _unwrap_bing(href: str) -> str:
 
 
 def _make_queries(claim: str, lang: str) -> list[str]:
-    """LLM compresses the claim into search queries: claim language + English."""
+    """The LLM compresses the claim into search queries: claim language + English."""
     from . import llm
     try:
         text = llm.chat(
@@ -71,7 +71,7 @@ def _make_queries(claim: str, lang: str) -> list[str]:
         )
         qs = [q.strip() for q in llm.parse_json(text).get("queries", []) if q and q.strip()]
         return qs[:2] or [claim[:100]]
-    except Exception:  # noqa: BLE001: degrade to the raw claim
+    except Exception:  # noqa: BLE001 - degrade to the raw claim
         return [claim[:100]]
 
 
@@ -111,10 +111,10 @@ def _bing(claim: str, lang: str, n: int) -> list[dict]:
 
 
 def search_web(claim: str, lang: str = "ru", n: int = 6) -> list[dict]:
-    """Claim → results [{title,url,snippet,domain}] after junk filtering.
+    """Claim -> results [{title,url,snippet,domain}] after junk filtering.
 
-    A full sentence is useless to Bing, so the LLM compresses the claim into 2 keyword
-    queries (claim language + English), results are merged.
+    Bing cannot be fed a whole sentence: the LLM compresses the claim into 2
+    keyword queries (claim language + English); results are merged.
     """
     queries = _make_queries(claim, lang)
     raw: list[dict] = []

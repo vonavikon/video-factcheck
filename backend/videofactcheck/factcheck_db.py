@@ -1,18 +1,20 @@
-r"""Этап 2: матчинг с готовыми факт-чеками (Google Fact Check Tools API / ClaimReview).
+r"""Stage 2: matching against ready-made fact checks (Google Fact Check Tools API / ClaimReview).
 
-Первый и самый дешёвый слой вердиктов: если утверждение уже проверялось людьми
-(Politifact, Snopes, AFP, «Проверено.медиа»), показываем их вердикт с атрибуцией
-издания — LLM не зовётся вовсе. Решение В12 (live API; локальный дамп — итерация 2).
+The first and cheapest verdict layer: if a claim was already checked by humans
+(Politifact, Snopes, AFP, «Проверено.медиа»), we show their verdict with the
+publisher's attribution, no LLM call at all (decision: live API; a local dump
+is a later iteration).
 
-Ключ VFC_FACTCHECK_KEY (Google Cloud API key, начинается с AIza). Ключа нет или
-API недоступен — слой молча пропускается, работает sonar-слой.
+The key is VFC_FACTCHECK_KEY (Google Cloud API key, starts with AIza). Without
+the key, or when the API is down, the layer is silently skipped and the sonar
+layer does the work.
 
 False-match guards (code-review fix): token similarity is blind to short
-numbers ("на 20%" vs "на 30%" — the "20" token is under 3 chars and dropped by
+numbers ("на 20%" vs "на 30%": the "20" token is under 3 chars and dropped by
 _tokens) and to polarity inversions ("препарат снижает риск на 20%" vs
 "препарат увеличивает риск на 20%" scores 0.75). Every candidate therefore
 passes two hard filters before similarity decides: (1) the number multisets of
-the claim and the reviewed text must be equal — percentages tracked separately
+the claim and the reviewed text must be equal; percentages are tracked separately
 from absolutes (20% != 20), scale words folded into the value ("1,5 млн" ==
 "1500000"), texts where one side has numbers and the other has none mismatch
 too; (2) direction antonyms (RU+EN, matched by word-boundary stems so Russian
@@ -21,7 +23,7 @@ point opposite ways in the two texts, and a negated direction («не
 увеличивает», "does not increase") conflicts with any plain direction in the
 other text. Both guards are deliberately conservative:
 a mismatch discards the candidate and the claim falls through to the sonar
-layer — a false reject costs one LLM call, while a false match would pin a
+layer: a false reject costs one LLM call, while a false match would pin a
 human verdict (trust 0.9, confidence "высокая") on a claim the fact-checker
 never made.
 
@@ -36,11 +38,11 @@ from urllib.parse import urlparse
 
 import httpx
 
-API = "https://factchecktools.googleapis.com/v1alpha1/claims:search"  # v1.1 удалён Google (404), актуален v1alpha1
+API = "https://factchecktools.googleapis.com/v1alpha1/claims:search"  # v1.1 was removed by Google (404), v1alpha1 is the live one
 
-# словесные рейтинги факт-чекеров → наши три класса.
-# Матчинг по началу слова (\b), не подстрокой: «сложно» не должно ловиться как «ложно».
-# Порядок: сначала смешанные («half true» содержит «true», но это не правда).
+# Verbal ratings of fact-checkers → our three classes.
+# Matching by word start (\b), not by substring: «сложно» must not match as «ложно».
+# Order: mixed ratings first ("half true" contains "true", but it is not true).
 RATING_RE = [
     ("странно", r"\bmixture\b|\bpartly\b|\bhalf[- ]true\b|\bmisleading\b|\bunproven\b|"
                 r"\bчастичн\w*|\bвводит в заблуждение\b|\bнепровер\w*|\bнет данных\b"),
@@ -51,18 +53,18 @@ RATING_RE = [
 
 
 def _map_rating(rating: str) -> tuple[str, str]:
-    """Словесный рейтинг издания → (правда/ложно/странно, пояснение)."""
+    """A publisher's verbal rating → (правда/ложно/странно, note)."""
     r = (rating or "").lower()
     for verdict, pattern in RATING_RE:
         if re.search(pattern, r):
             return verdict, ""
-    # незнакомая шкала издания — показываем как есть, классифицируем осторожно
+    # unknown publisher scale: show as is, classify conservatively
     return "странно", f"оригинальный вердикт: «{rating}»"
 
 
 def match(claim: str, lang: str = "ru") -> dict | None:
-    """Утверждение → вердикт из ClaimReview с атрибуцией, либо None (слой пропущен).
-    lang — язык why (ru/en), пришёл из настройки расширения (ревью P1-5)."""
+    """A claim → a ClaimReview verdict with attribution, or None (layer skipped).
+    lang is the why language (ru/en), it comes from the extension setting."""
     key = os.environ.get("VFC_FACTCHECK_KEY", "").strip()
     if not key:
         return None
@@ -72,7 +74,7 @@ def match(claim: str, lang: str = "ru") -> dict | None:
         if r.status_code != 200:
             return None
         data = r.json()
-    except Exception:  # noqa: BLE001 — слой необязательный, отказ не роняет пайплайн
+    except Exception:  # noqa: BLE001: the layer is optional, a failure does not kill the pipeline
         return None
 
     best = None
@@ -81,8 +83,8 @@ def match(claim: str, lang: str = "ru") -> dict | None:
         reviewed = c.get("text") or c.get("claimText") or ""
         sim = _similarity(claim, reviewed)
         # Guards are hard filters, not tie-breakers: a candidate contradicting
-        # the claim on numbers or direction is discarded even at top similarity
-        # — the claim falls through to the next candidate or the sonar layer.
+        # the claim on numbers or direction is discarded even at top similarity,
+        # and the claim falls through to the next candidate or the sonar layer.
         if sim > best_sim and _guards_pass(claim, reviewed):
             best_sim = sim
             best = c
@@ -95,7 +97,7 @@ def match(claim: str, lang: str = "ru") -> dict | None:
     url = (review.get("url") or "").strip()
     verdict, note = _map_rating(rating)
     domain = urlparse(url).netloc.removeprefix("www.") if url else publisher
-    # локализация why: en-пользователь видит английские карточки рядом с sonar-аналогами
+    # why localization: an en user sees English cards next to sonar counterparts
     if lang == "en":
         why = (f"Checked by human fact-checkers ({publisher}): “{rating}”" if rating
                else f"Checked by human fact-checkers ({publisher})")
@@ -109,10 +111,10 @@ def match(claim: str, lang: str = "ru") -> dict | None:
             "domain": domain or publisher, "url": url,
             "title": review.get("title") or "",
             "quote": f"Вердикт факт-чекера: {rating}" if rating else "",
-            "trust": 0.9,  # профессиональный факт-чек
+            "trust": 0.9,  # professional fact-check
         }],
         "relevant": 1,
-        "confidence": "высокая",  # вердикт вынесен человеком-факт-чекером
+        "confidence": "высокая",  # verdict issued by a human fact-checker
         "engine": "claimreview",
         "passes": ["human"],
         "similarity": round(best_sim, 2),
@@ -120,7 +122,7 @@ def match(claim: str, lang: str = "ru") -> dict | None:
 
 
 def _similarity(a: str, b: str) -> float:
-    """Нормализованное пересечение токенов (containment: |A∩B|/min(|A|,|B|))."""
+    """Normalized token intersection (containment: |A∩B|/min(|A|,|B|))."""
     ta = _tokens(a)
     tb = _tokens(b)
     if not ta or not tb:
@@ -192,7 +194,7 @@ def _numbers(t: str) -> tuple[Counter[float], Counter[float], Counter[float]]:
         s = m["num"]
         v = float(s.replace(",", "")) if _GROUPED_RE.fullmatch(s) else float(s.replace(",", "."))
         unit = m["unit"] or ""
-        if unit.startswith(("процентн", "п.")):  # процентных пунктов / п.п.
+        if unit.startswith(("процентн", "п.")):  # percentage points
             points[round(v, 4)] += 1
         elif unit.startswith(("%", "процент")):
             perc[round(v, 4)] += 1

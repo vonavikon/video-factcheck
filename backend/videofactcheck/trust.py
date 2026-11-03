@@ -1,6 +1,7 @@
-"""Stage 5 (trimmed per B19): domain trust, whitelist/blacklist + unknown=0.5.
+"""Stage 5 (reduced scope): domain trust, whitelist/blacklist + unknown=0.5.
 
-The full MBFC/WP:RSP lists are planned for iteration 2+. The starter list has ~40 domains, RU+EN.
+The full MBFC/WP:RSP lists are a later iteration. The starter list is ~40
+domains, RU+EN.
 """
 from . import config
 
